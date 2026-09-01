@@ -4,16 +4,18 @@
 
 // ===== SUPABASE CONFIGURATION =====
 const supabaseUrl = 'https://tkapyxsuagzwxvvslhyn.supabase.co'; 
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYXB5eHN1YWd6d3h2dnNsaHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDIyMzEsImV4cCI6MjEwMzMxODIzMX0.7UaRmzPGK9cStuJEkw4Fa1xoYLuCzGN6ONRFB_GNDJw'; // ← REPLACE THIS
+>> const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYXB5eHN1YWd6d3h2dnNsaHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDIyMzEsImV4cCI6MjEwMzMxODIzMX0.7UaRmzPGK9cStuJEkw4Fa1xoYLuCzGN6ONRFB_GNDJw';
 
-// Initialize Supabase client
+// ===== INITIALIZE SUPABASE =====
 const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+console.log('🚀 Supabase initialized with URL:', supabaseUrl);
 
 // ===== CURRENT USER =====
 let currentUser = null;
 let currentUserRole = null;
 
-// ===== DATA STORE (for UI rendering) =====
+// ===== DATA STORE =====
 let data = {
     events: [],
     vendors: [],
@@ -39,25 +41,8 @@ let data = {
     }
 };
 
-// ===== MODULE SUMMARIES =====
-const MODULE_SUMMARIES = [
-    { id: 1, summary: "Learn what event management is, the 5 phases of every event, and the key roles (Client, Vendors, Planners, Guests)." },
-    { id: 2, summary: "Deep dive into 6 vendor categories: Venue, Caterer, Photographer, Decorator, DJ, Makeup Artist. Learn what to ask and hidden costs." },
-    { id: 3, summary: "Master the three essential documents: Run-Sheet (timeline), Budget Tracker, and Vendor Contracts." },
-    { id: 4, summary: "Learn the Sandwich Method for bad news, active listening, and professional email/WhatsApp etiquette." },
-    { id: 5, summary: "Understand Revenue vs. Profit vs. Margin, cash flow management, and hidden costs (GST, service tax, tips)." },
-    { id: 6, summary: "The 'Invisible Fix' philosophy and SOPs for common emergencies: vendor lateness, rain, power cuts, medical issues." },
-    { id: 7, summary: "20-point venue checklist: parking, washrooms, power backup, stage, kitchen location, and technical logistics." },
-    { id: 8, summary: "Sales funnel, lead generation tactics (Instagram DMs, vendor referrals), and DM templates." },
-    { id: 9, summary: "Negotiation tactics: The Bulk Discount, The Pause, and Value Add vs. Discount. Up-selling to clients." },
-    { id: 10, summary: "D-Day playbook: Vendor check-in protocol, founder's rules, and your role as 'eyes and ears'." },
-    { id: 11, summary: "Post-event: vendor payments, client feedback forms, and team debrief sessions." },
-    { id: 12, summary: "Client contracts (5 must-have clauses), GST/invoicing, and intellectual property (photo rights)." },
-    { id: 13, summary: "Generative AI for event planning: prompt engineering, email drafting, run-sheets, vendor research, marketing, and golden rules." }
-];
-
 // ============================================================
-// LOGIN / LOGOUT FUNCTIONS
+// LOGIN FUNCTION
 // ============================================================
 
 async function handleLogin(event) {
@@ -65,34 +50,44 @@ async function handleLogin(event) {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value.trim();
 
+    console.log('🔐 Attempting login for:', email);
+
     if (!email || !password) {
         alert('Please enter both email and password.');
         return;
     }
 
     try {
-        // Sign in with Supabase
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
             email: email,
             password: password
         });
 
+        console.log('Auth response:', { authData, authError });
+
         if (authError) {
-            alert('Invalid email or password. Please try again.');
+            alert('Login failed: ' + authError.message);
             console.error('Login error:', authError);
             return;
         }
+
+        if (!authData || !authData.user) {
+            alert('Login failed: No user data returned.');
+            return;
+        }
+
+        const userEmail = authData.user.email;
 
         // Get user role from the users table
         const { data: userData, error: userError } = await supabase
             .from('users')
             .select('*')
-            .eq('email', email)
+            .eq('email', userEmail)
             .single();
 
         if (userError) {
-            alert('User role not found. Please contact the administrator.');
-            console.error('User fetch error:', userError);
+            alert('User role not found. Please contact admin.');
+            console.error('User role error:', userError);
             return;
         }
 
@@ -103,7 +98,6 @@ async function handleLogin(event) {
         };
         currentUserRole = userData.role;
 
-        // Save session
         localStorage.setItem('eventoUser', JSON.stringify(currentUser));
 
         // Show dashboard
@@ -113,19 +107,27 @@ async function handleLogin(event) {
 
         applyPermissions(currentUser.role);
 
-        // Load data from Supabase
         await loadAllData();
 
-        // Navigate to home
         navigateTo('home');
 
         console.log('✅ Logged in as:', currentUser.name);
 
     } catch (error) {
         alert('Login failed. Please try again.');
-        console.error('Login error:', error);
+        console.error('Unexpected login error:', error);
     }
 }
+
+function applyPermissions(role) {
+    const isFounder = role === 'founder';
+    document.getElementById('nav-budgets').style.display = isFounder ? 'block' : 'none';
+    document.getElementById('nav-run-sheets').style.display = isFounder ? 'block' : 'none';
+}
+
+// ============================================================
+// LOGOUT FUNCTION
+// ============================================================
 
 async function handleLogout() {
     if (!confirm('Are you sure you want to log out?')) return;
@@ -139,20 +141,14 @@ async function handleLogout() {
         document.getElementById('login-screen').style.display = 'flex';
         document.getElementById('login-email').value = '';
         document.getElementById('login-password').value = '';
-        console.log('✅ Logged out successfully');
+        console.log('✅ Logged out');
     } catch (error) {
         console.error('Logout error:', error);
     }
 }
 
-function applyPermissions(role) {
-    const isFounder = role === 'founder';
-    document.getElementById('nav-budgets').style.display = isFounder ? 'block' : 'none';
-    document.getElementById('nav-run-sheets').style.display = isFounder ? 'block' : 'none';
-}
-
 // ============================================================
-// DATA LOADING FROM SUPABASE
+// DATA LOADING FUNCTIONS
 // ============================================================
 
 async function loadAllData() {
@@ -200,12 +196,9 @@ async function loadVendors() {
 
 async function loadTasks() {
     const query = supabase.from('tasks').select('*');
-
-    // If intern, only show their tasks
     if (currentUserRole === 'intern') {
         query.eq('assigned_to', currentUser.name);
     }
-
     const { data: tasks, error } = await query;
 
     if (error) {
@@ -216,12 +209,10 @@ async function loadTasks() {
 }
 
 async function loadBudgets() {
-    // Only founders can see budgets
     if (currentUserRole !== 'founder') {
         data.budgets = [];
         return;
     }
-
     const { data: budgets, error } = await supabase
         .from('budgets')
         .select('*')
@@ -235,12 +226,10 @@ async function loadBudgets() {
 }
 
 async function loadRunSheets() {
-    // Only founders can see run-sheets
     if (currentUserRole !== 'founder') {
         data.runSheets = [];
         return;
     }
-
     const { data: runSheets, error } = await supabase
         .from('run_sheets')
         .select('*')
@@ -264,65 +253,12 @@ async function loadTrainingProgress() {
         return;
     }
 
-    // Update training modules with progress
     if (progress && progress.length > 0) {
         data.training.modules = data.training.modules.map(module => {
             const found = progress.find(p => p.module_id === module.id);
             return { ...module, completed: found ? found.completed : false };
         });
     }
-}
-
-// ============================================================
-// SAVE FUNCTIONS (CRUD Operations)
-// ============================================================
-
-async function addEventToSupabase(eventData) {
-    const { data: newEvent, error } = await supabase
-        .from('events')
-        .insert([{
-            ...eventData,
-            created_by: currentUser.email
-        }])
-        .select()
-        .single();
-
-    if (error) {
-        console.error('Error adding event:', error);
-        alert('Failed to add event. Please try again.');
-        return null;
-    }
-    return newEvent;
-}
-
-async function updateEventInSupabase(id, eventData) {
-    const { data: updatedEvent, error } = await supabase
-        .from('events')
-        .update(eventData)
-        .eq('id', id)
-        .select()
-        .single();
-
-    if (error) {
-        console.error('Error updating event:', error);
-        alert('Failed to update event. Please try again.');
-        return null;
-    }
-    return updatedEvent;
-}
-
-async function deleteEventFromSupabase(id) {
-    const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', id);
-
-    if (error) {
-        console.error('Error deleting event:', error);
-        alert('Failed to delete event. Please try again.');
-        return false;
-    }
-    return true;
 }
 
 // ============================================================
@@ -501,6 +437,22 @@ function renderRunSheets() {
 // TRAINING MODULE RENDERING
 // ============================================================
 
+const MODULE_SUMMARIES = [
+    { id: 1, summary: "Learn what event management is, the 5 phases of every event, and the key roles." },
+    { id: 2, summary: "Deep dive into 6 vendor categories: Venue, Caterer, Photographer, Decorator, DJ, Makeup Artist." },
+    { id: 3, summary: "Master the three essential documents: Run-Sheet, Budget Tracker, and Vendor Contracts." },
+    { id: 4, summary: "Learn the Sandwich Method for bad news, active listening, and professional etiquette." },
+    { id: 5, summary: "Understand Revenue vs. Profit vs. Margin, cash flow management, and hidden costs." },
+    { id: 6, summary: "The 'Invisible Fix' philosophy and SOPs for common emergencies." },
+    { id: 7, summary: "20-point venue checklist: parking, washrooms, power backup, stage, kitchen location." },
+    { id: 8, summary: "Sales funnel, lead generation tactics, and DM templates." },
+    { id: 9, summary: "Negotiation tactics: The Bulk Discount, The Pause, and Value Add." },
+    { id: 10, summary: "D-Day playbook: Vendor check-in protocol, founder's rules." },
+    { id: 11, summary: "Post-event: vendor payments, client feedback forms, and team debrief." },
+    { id: 12, summary: "Client contracts (5 must-have clauses), GST/invoicing, and photo rights." },
+    { id: 13, summary: "Generative AI for event planning: prompt engineering, email drafting, run-sheets." }
+];
+
 function renderTraining() {
     const grid = document.querySelector('.training-grid');
     if (!grid) return;
@@ -539,7 +491,7 @@ function renderTrainingProgress() {
 }
 
 // ============================================================
-// TRAINING TOGGLE (Sync to Supabase)
+// TRAINING TOGGLE
 // ============================================================
 
 async function toggleModule(id) {
@@ -549,7 +501,6 @@ async function toggleModule(id) {
     const newStatus = !mod.completed;
     mod.completed = newStatus;
 
-    // Sync to Supabase
     const { error } = await supabase
         .from('training_progress')
         .upsert({
@@ -564,7 +515,6 @@ async function toggleModule(id) {
     if (error) {
         console.error('Error updating training progress:', error);
         alert('Failed to save training progress. Please try again.');
-        // Revert the change
         mod.completed = !newStatus;
         renderTraining();
         renderTrainingProgress();
@@ -604,7 +554,7 @@ function closeModal() {
 }
 
 // ============================================================
-// EVENT CRUD (Supabase)
+// EVENT CRUD
 // ============================================================
 
 function showAddEventForm() {
@@ -644,15 +594,22 @@ async function addEvent() {
         return;
     }
 
-    const eventData = { name, client, date, venue, status };
-    const newEvent = await addEventToSupabase(eventData);
+    const { data: newEvent, error } = await supabase
+        .from('events')
+        .insert([{ name, client, date, venue, status, created_by: currentUser.email }])
+        .select()
+        .single();
 
-    if (newEvent) {
-        data.events.push(newEvent);
-        renderAll();
-        closeModal();
-        console.log('✅ Event added:', newEvent);
+    if (error) {
+        console.error('Error adding event:', error);
+        alert('Failed to add event. Please try again.');
+        return;
     }
+
+    data.events.push(newEvent);
+    renderAll();
+    closeModal();
+    console.log('✅ Event added:', newEvent);
 }
 
 async function deleteEvent(id) {
@@ -663,12 +620,17 @@ async function deleteEvent(id) {
 
     if (!confirm('Delete this event?')) return;
 
-    const success = await deleteEventFromSupabase(id);
-    if (success) {
-        data.events = data.events.filter(e => e.id !== id);
-        renderAll();
-        console.log('✅ Event deleted:', id);
+    const { error } = await supabase.from('events').delete().eq('id', id);
+
+    if (error) {
+        console.error('Error deleting event:', error);
+        alert('Failed to delete event. Please try again.');
+        return;
     }
+
+    data.events = data.events.filter(e => e.id !== id);
+    renderAll();
+    console.log('✅ Event deleted:', id);
 }
 
 function editEvent(id) {
@@ -711,17 +673,27 @@ async function updateEvent(id) {
         status: document.getElementById('f-event-status').value
     };
 
-    const updatedEvent = await updateEventInSupabase(id, updatedData);
-    if (updatedEvent) {
-        Object.assign(e, updatedEvent);
-        renderAll();
-        closeModal();
-        console.log('✅ Event updated:', updatedEvent);
+    const { data: updatedEvent, error } = await supabase
+        .from('events')
+        .update(updatedData)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating event:', error);
+        alert('Failed to update event. Please try again.');
+        return;
     }
+
+    Object.assign(e, updatedEvent);
+    renderAll();
+    closeModal();
+    console.log('✅ Event updated:', updatedEvent);
 }
 
 // ============================================================
-// VENDOR CRUD (Supabase)
+// VENDOR CRUD
 // ============================================================
 
 function showAddVendorForm() {
@@ -764,11 +736,9 @@ async function addVendor() {
         return;
     }
 
-    const vendorData = { name, category, contact, phone, price, created_by: currentUser.email };
-
     const { data: newVendor, error } = await supabase
         .from('vendors')
-        .insert([vendorData])
+        .insert([{ name, category, contact, phone, price, created_by: currentUser.email }])
         .select()
         .single();
 
@@ -868,7 +838,7 @@ async function updateVendor(id) {
 }
 
 // ============================================================
-// TASK CRUD (Supabase)
+// TASK CRUD
 // ============================================================
 
 function showAddTaskForm() {
@@ -909,11 +879,9 @@ async function addTask() {
         return;
     }
 
-    const taskData = { title, description, assigned_to, event_id, status: 'todo', created_by: currentUser.email };
-
     const { data: newTask, error } = await supabase
         .from('tasks')
-        .insert([taskData])
+        .insert([{ title, description, assigned_to, event_id, status: 'todo', created_by: currentUser.email }])
         .select()
         .single();
 
@@ -1003,11 +971,9 @@ async function addBudget() {
         return;
     }
 
-    const budgetData = { event_id, category, estimated, actual, status, created_by: currentUser.email };
-
     const { data: newBudget, error } = await supabase
         .from('budgets')
-        .insert([budgetData])
+        .insert([{ event_id, category, estimated, actual, status, created_by: currentUser.email }])
         .select()
         .single();
 
@@ -1057,11 +1023,9 @@ async function addRunSheet() {
         return;
     }
 
-    const runSheetData = { event_id, timeline, created_by: currentUser.email };
-
     const { data: newRunSheet, error } = await supabase
         .from('run_sheets')
-        .insert([runSheetData])
+        .insert([{ event_id, timeline, created_by: currentUser.email }])
         .select()
         .single();
 
@@ -1171,16 +1135,14 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ============================================================
-// AUTO-LOGIN CHECK & START APP
+// AUTO-LOGIN CHECK
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // Check if user is already logged in
     const savedUser = localStorage.getItem('eventoUser');
     if (savedUser) {
         try {
             const user = JSON.parse(savedUser);
-            // Verify session with Supabase
             const { data: sessionData } = await supabase.auth.getSession();
 
             if (sessionData?.session) {
@@ -1203,54 +1165,40 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Show login screen
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('dashboard-container').style.display = 'none';
-    console.log('🚀 Evento-Events Dashboard with Supabase backend loaded successfully!');
+    console.log('🚀 Evento-Events Dashboard loaded successfully!');
 });
 
 // ============================================================
 // EXPOSE FUNCTIONS TO GLOBAL SCOPE
 // ============================================================
 
-// Login/Logout
 window.handleLogin = handleLogin;
 window.handleLogout = handleLogout;
 window.navigateTo = navigateTo;
-
-// Events
 window.showAddEventForm = showAddEventForm;
 window.addEvent = addEvent;
 window.deleteEvent = deleteEvent;
 window.editEvent = editEvent;
 window.updateEvent = updateEvent;
-
-// Vendors
 window.showAddVendorForm = showAddVendorForm;
 window.addVendor = addVendor;
 window.deleteVendor = deleteVendor;
 window.editVendor = editVendor;
 window.updateVendor = updateVendor;
-
-// Tasks
 window.showAddTaskForm = showAddTaskForm;
 window.addTask = addTask;
 window.moveTask = moveTask;
-
-// Budgets
 window.showAddBudgetForm = showAddBudgetForm;
 window.addBudget = addBudget;
-
-// Run-Sheets
 window.showAddRunSheetForm = showAddRunSheetForm;
 window.addRunSheet = addRunSheet;
 window.deleteRunSheet = deleteRunSheet;
 window.editRunSheet = editRunSheet;
 window.updateRunSheet = updateRunSheet;
-
-// Training
 window.toggleModule = toggleModule;
-
-// Modal
 window.closeModal = closeModal;
 window.openModal = openModal;
+
+console.log('✅ All functions exposed to global scope');
