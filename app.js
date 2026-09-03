@@ -1,5 +1,5 @@
 // ============================================================
-// EVENTO-EVENTS DASHBOARD – Final Working Version
+// EVENTO-EVENTS DASHBOARD – FINAL WORKING VERSION
 // ============================================================
 
 // ===== SUPABASE CONFIGURATION =====
@@ -8,15 +8,16 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 // ===== INITIALIZE SUPABASE =====
 const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
 console.log('🚀 Supabase initialized');
 
-// ===== GLOBAL STATE =====
-let currentUser = null;
-let currentUserRole = null;
+// ============================================================
+// GLOBAL FUNCTIONS
+// ============================================================
 
-// ===== LOGIN FUNCTION =====
-async function handleLogin() {
+function handleLogin() {
     console.log('🟢 handleLogin() triggered');
+    
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value.trim();
 
@@ -26,88 +27,53 @@ async function handleLogin() {
     }
 
     console.log('📧 Email:', email);
-    console.log('🔑 Password entered (length):', password.length);
 
-    try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-
-        if (error) {
-            alert('Login failed: ' + error.message);
-            console.error('❌ Auth error:', error);
+    supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+    })
+    .then(result => {
+        console.log('📦 Auth result:', result);
+        
+        if (result.error) {
+            alert('Login failed: ' + result.error.message);
             return;
         }
 
-        if (!data.user) {
+        if (!result.data || !result.data.user) {
             alert('No user data returned.');
             return;
         }
 
-        console.log('✅ Auth successful for:', data.user.email);
+        console.log('✅ Auth successful for:', result.data.user.email);
 
-        // Fetch user role from 'users' table
-        const { data: userData, error: roleError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', data.user.email)
-            .single();
-
-        if (roleError) {
-            alert('User role not found. Contact admin.');
-            console.error('❌ Role error:', roleError);
-            return;
-        }
-
-        currentUser = {
-            email: userData.email,
-            name: userData.name,
-            role: userData.role
-        };
-        currentUserRole = userData.role;
-
-        localStorage.setItem('eventoUser', JSON.stringify(currentUser));
-
-        // Hide login, show dashboard
+        // Show dashboard
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('dashboard-container').style.display = 'flex';
-        document.getElementById('user-badge').textContent = `👤 ${currentUser.name} (${currentUser.role})`;
+        document.getElementById('user-badge').textContent = '👤 Logged In';
 
-        applyPermissions(currentUser.role);
-
-        // Load data (you'll need to implement loadAllData if not present)
-        // For now, just navigate to home
-        navigateTo('home');
-
-        console.log('✅ Logged in as:', currentUser.name);
-
-    } catch (err) {
-        alert('Login failed. Please try again.');
-        console.error('💥 Unexpected error:', err);
-    }
+        console.log('✅ Dashboard should be visible now!');
+    })
+    .catch(err => {
+        alert('Login failed: ' + err.message);
+        console.error('💥 Error:', err);
+    });
 }
 
-function applyPermissions(role) {
-    const isFounder = role === 'founder';
-    document.getElementById('nav-budgets').style.display = isFounder ? 'block' : 'none';
-    document.getElementById('nav-run-sheets').style.display = isFounder ? 'block' : 'none';
-}
-
-async function handleLogout() {
-    if (!confirm('Logout?')) return;
-    await supabase.auth.signOut();
-    localStorage.removeItem('eventoUser');
-    document.getElementById('dashboard-container').style.display = 'none';
+function handleLogout() {
     document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('dashboard-container').style.display = 'none';
 }
 
-// ===== DUMMY FUNCTIONS TO AVOID ERRORS (replace with your real ones) =====
 function navigateTo(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById('page-' + page);
     if (target) target.classList.add('active');
 }
+
+// ============================================================
+// DUMMY FUNCTIONS (to avoid errors)
+// ============================================================
 
 function showAddEventForm() { alert('Add Event – implement later'); }
 function showAddVendorForm() { alert('Add Vendor – implement later'); }
@@ -115,9 +81,15 @@ function showAddTaskForm() { alert('Add Task – implement later'); }
 function showAddBudgetForm() { alert('Add Budget – implement later'); }
 function showAddRunSheetForm() { alert('Add Run-Sheet – implement later'); }
 function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-function openModal(html) { document.getElementById('modal-body').innerHTML = html; document.getElementById('modal').classList.remove('hidden'); }
+function openModal(html) { 
+    document.getElementById('modal-body').innerHTML = html; 
+    document.getElementById('modal').classList.remove('hidden'); 
+}
 
-// Expose to global scope
+// ============================================================
+// EXPOSE TO GLOBAL SCOPE
+// ============================================================
+
 window.handleLogin = handleLogin;
 window.handleLogout = handleLogout;
 window.navigateTo = navigateTo;
@@ -129,4 +101,4 @@ window.showAddRunSheetForm = showAddRunSheetForm;
 window.closeModal = closeModal;
 window.openModal = openModal;
 
-console.log('✅ All functions exposed');
+console.log('✅ All functions exposed to window');
