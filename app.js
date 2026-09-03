@@ -4,10 +4,10 @@
 
 // ===== SUPABASE CONFIGURATION =====
 const supabaseUrl = 'https://tkapyxsuagzwxvvslhyn.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYXB5eHN1YWd6d3h2dnNsaHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDIyMzEsImV4cCI6MjEwMzMxODIzMX0.7UaRmzPGK9cStuJEkw4Fa1xoYLuCzGN6ONRFB_GNDJw'
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYXB5eHN1YWd6d3h2dnNsaHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDIyMzEsImV4cCI6MjEwMzMxODIzMX0.7UaRmzPGK9cStuJEkw4Fa1xoYLuCzGN6ONRFB_GNDJw';
 
 // ===== INITIALIZE SUPABASE =====
-const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
 console.log('🚀 Supabase initialized');
 
@@ -45,8 +45,8 @@ let data = {
 // LOGIN FUNCTION
 // ============================================================
 
-async function handleLogin(event) {
-    event.preventDefault();
+async function handleLogin() {
+    
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value.trim();
 
@@ -233,7 +233,7 @@ function renderStats() {
     document.getElementById('stat-events').textContent = data.events.length;
     document.getElementById('stat-vendors').textContent = data.vendors.length;
     document.getElementById('stat-tasks').textContent = data.tasks.length;
-    const totalBudget = data.budgets.reduce((sum, b) => sum + b.estimated, 0);
+    const totalBudget = data.budgets.reduce((sum, b) => sum + Number(b.estimated), 0);
     document.getElementById('stat-budget').textContent = totalBudget.toLocaleString();
 }
 
@@ -376,7 +376,7 @@ async function toggleModule(id) {
         module_id: id,
         completed: newStatus,
         updated_at: new Date().toISOString()
-    }, { onConflict: 'user_email, module_id' });
+    }, { onConflict: 'user_email,module_id' });
     if (error) {
         console.error('Error updating training progress:', error);
         mod.completed = !newStatus;
