@@ -8,7 +8,6 @@
 </head>
 <body>
 
-    <!-- ===== LOGIN SCREEN ===== -->
     <div id="login-screen" class="login-screen">
         <div class="login-box">
             <div class="login-logo">
@@ -27,10 +26,7 @@
         </div>
     </div>
 
-    <!-- ===== MAIN DASHBOARD (Hidden until login) ===== -->
     <div id="dashboard-container" style="display:none;">
-
-        <!-- ===== SIDEBAR ===== -->
         <aside class="sidebar" id="sidebar">
             <div class="logo">
                 <h2>🎉 Evento</h2>
@@ -50,11 +46,7 @@
                 <button onclick="handleLogout()" style="background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:13px;">🚪 Logout</button>
             </div>
         </aside>
-
-        <!-- ===== MAIN CONTENT ===== -->
         <main class="main-content">
-
-            <!-- HOME PAGE -->
             <section id="page-home" class="page active">
                 <header class="page-header">
                     <h1>🏠 Dashboard Home</h1>
@@ -73,8 +65,6 @@
                     <button class="btn-secondary" onclick="navigateTo('tasks')">+ New Task</button>
                 </div>
             </section>
-
-            <!-- EVENTS PAGE -->
             <section id="page-events" class="page">
                 <header class="page-header">
                     <h1>📅 Events</h1>
@@ -89,8 +79,6 @@
                     </table>
                 </div>
             </section>
-
-            <!-- VENDORS PAGE -->
             <section id="page-vendors" class="page">
                 <header class="page-header">
                     <h1>🏢 Vendors</h1>
@@ -105,30 +93,17 @@
                     </table>
                 </div>
             </section>
-
-            <!-- TASKS PAGE -->
             <section id="page-tasks" class="page">
                 <header class="page-header">
                     <h1>✅ Tasks</h1>
                     <button class="btn-primary" onclick="showAddTaskForm()">+ Add Task</button>
                 </header>
                 <div class="kanban-board">
-                    <div class="kanban-column">
-                        <h3>📋 To-Do</h3>
-                        <div id="tasks-todo" class="task-list"></div>
-                    </div>
-                    <div class="kanban-column">
-                        <h3>🔄 In Progress</h3>
-                        <div id="tasks-progress" class="task-list"></div>
-                    </div>
-                    <div class="kanban-column">
-                        <h3>✅ Done</h3>
-                        <div id="tasks-done" class="task-list"></div>
-                    </div>
+                    <div class="kanban-column"><h3>📋 To-Do</h3><div id="tasks-todo" class="task-list"></div></div>
+                    <div class="kanban-column"><h3>🔄 In Progress</h3><div id="tasks-progress" class="task-list"></div></div>
+                    <div class="kanban-column"><h3>✅ Done</h3><div id="tasks-done" class="task-list"></div></div>
                 </div>
             </section>
-
-            <!-- BUDGETS PAGE -->
             <section id="page-budgets" class="page">
                 <header class="page-header">
                     <h1>💰 Budgets</h1>
@@ -143,8 +118,6 @@
                     </table>
                 </div>
             </section>
-
-            <!-- RUN-SHEETS PAGE -->
             <section id="page-run-sheets" class="page">
                 <header class="page-header">
                     <h1>🏃 Run-Sheets</h1>
@@ -152,8 +125,6 @@
                 </header>
                 <div id="run-sheets-container"></div>
             </section>
-
-            <!-- TRAINING PAGE -->
             <section id="page-training" class="page">
                 <header class="page-header">
                     <h1>📖 Training Modules</h1>
@@ -165,20 +136,15 @@
                     <div id="training-progress" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;"></div>
                 </div>
             </section>
-
         </main>
-
-        <!-- ===== MODAL ===== -->
         <div id="modal" class="modal hidden">
             <div class="modal-content">
                 <span class="modal-close" onclick="closeModal()">&times;</span>
                 <div id="modal-body"></div>
             </div>
         </div>
-
     </div>
 
-    <!-- ===== SUPABASE SDK ===== -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
 </body>
