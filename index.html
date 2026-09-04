@@ -8,144 +8,151 @@
 </head>
 <body>
 
-    <div id="login-screen" class="login-screen">
-        <div class="login-box">
-            <div class="login-logo">
-                <h2>🎉 Evento</h2>
-                <p class="subtitle">Redefined</p>
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo">
+            <h2>🎉 Evento</h2>
+            <p class="subtitle">Redefined</p>
+        </div>
+        <nav>
+            <button class="nav-btn active" data-page="home">📊 Home</button>
+            <button class="nav-btn" data-page="events">📅 Events</button>
+            <button class="nav-btn" data-page="vendors">🏢 Vendors</button>
+            <button class="nav-btn" data-page="tasks">✅ Tasks</button>
+            <button class="nav-btn" data-page="budgets">💰 Budgets</button>
+            <button class="nav-btn" data-page="run-sheets">🏃 Run-Sheets</button>
+            <button class="nav-btn" data-page="training">📖 Training</button>
+        </nav>
+        <div class="sidebar-footer">
+            <span class="user-badge">👤 Founder</span>
+        </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content">
+
+        <!-- HOME -->
+        <section id="page-home" class="page active">
+            <header class="page-header">
+                <h1>🏠 Dashboard Home</h1>
+                <p>Welcome to Evento-Events Redefined – Command Center</p>
+            </header>
+            <div class="stats-grid">
+                <div class="stat-card"><h3>📅 Events</h3><p class="stat-number" id="stat-events">0</p></div>
+                <div class="stat-card"><h3>🏢 Vendors</h3><p class="stat-number" id="stat-vendors">0</p></div>
+                <div class="stat-card"><h3>✅ Tasks</h3><p class="stat-number" id="stat-tasks">0</p></div>
+                <div class="stat-card"><h3>💰 Budget (₹)</h3><p class="stat-number" id="stat-budget">0</p></div>
             </div>
-            <h3>Sign In</h3>
-            <p style="color:#64748b;font-size:14px;margin-bottom:16px;">Enter your credentials to access the dashboard.</p>
-            <form id="login-form">
-                <label>Email</label>
-                <input type="email" id="login-email" placeholder="you@example.com" required />
-                <label>Password</label>
-                <input type="password" id="login-password" placeholder="••••••••" required />
-                <button type="button" class="btn-primary" style="width:100%;padding:10px;" onclick="handleLogin()">Sign In</button>
-            </form>
+            <div class="quick-actions">
+                <h3>⚡ Quick Actions</h3>
+                <button class="btn-primary" onclick="navigateTo('events')">+ New Event</button>
+                <button class="btn-secondary" onclick="navigateTo('vendors')">+ New Vendor</button>
+                <button class="btn-secondary" onclick="navigateTo('tasks')">+ New Task</button>
+            </div>
+        </section>
+
+        <!-- EVENTS -->
+        <section id="page-events" class="page">
+            <header class="page-header">
+                <h1>📅 Events</h1>
+                <button class="btn-primary" onclick="showAddEventForm()">+ Add Event</button>
+            </header>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Name</th><th>Client</th><th>Date</th><th>Venue</th><th>Status</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="events-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- VENDORS -->
+        <section id="page-vendors" class="page">
+            <header class="page-header">
+                <h1>🏢 Vendors</h1>
+                <button class="btn-primary" onclick="showAddVendorForm()">+ Add Vendor</button>
+            </header>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Name</th><th>Category</th><th>Contact</th><th>Phone</th><th>Price</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="vendors-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TASKS -->
+        <section id="page-tasks" class="page">
+            <header class="page-header">
+                <h1>✅ Tasks</h1>
+                <button class="btn-primary" onclick="showAddTaskForm()">+ Add Task</button>
+            </header>
+            <div class="kanban-board">
+                <div class="kanban-column">
+                    <h3>📋 To-Do</h3>
+                    <div id="tasks-todo" class="task-list"></div>
+                </div>
+                <div class="kanban-column">
+                    <h3>🔄 In Progress</h3>
+                    <div id="tasks-progress" class="task-list"></div>
+                </div>
+                <div class="kanban-column">
+                    <h3>✅ Done</h3>
+                    <div id="tasks-done" class="task-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BUDGETS -->
+        <section id="page-budgets" class="page">
+            <header class="page-header">
+                <h1>💰 Budgets</h1>
+                <button class="btn-primary" onclick="showAddBudgetForm()">+ Add Budget Item</button>
+            </header>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Event</th><th>Category</th><th>Est. Cost (₹)</th><th>Actual (₹)</th><th>Diff (₹)</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="budgets-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- RUN-SHEETS -->
+        <section id="page-run-sheets" class="page">
+            <header class="page-header">
+                <h1>🏃 Run-Sheets</h1>
+                <button class="btn-primary" onclick="showAddRunSheetForm()">+ Add Run-Sheet</button>
+            </header>
+            <div id="run-sheets-container"></div>
+        </section>
+
+        <!-- TRAINING -->
+        <section id="page-training" class="page">
+            <header class="page-header">
+                <h1>📖 Training Modules</h1>
+                <a href="#" target="_blank" class="btn-secondary" style="display:inline-block;padding:8px 16px;border-radius:6px;text-decoration:none;background:#e9edf4;color:#0f172a;">📄 Download Full Manual (PDF)</a>
+            </header>
+            <div class="training-grid"></div>
+            <div style="margin-top:32px;background:#fff;padding:20px;border-radius:12px;border:1px solid #e9edf4;">
+                <h3>📊 My Progress</h3>
+                <div id="training-progress" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modal-body"></div>
         </div>
     </div>
 
-    <div id="dashboard-container" style="display:none;">
-        <aside class="sidebar" id="sidebar">
-            <div class="logo">
-                <h2>🎉 Evento</h2>
-                <p class="subtitle">Redefined</p>
-            </div>
-            <nav>
-                <button class="nav-btn active" data-page="home">📊 Home</button>
-                <button class="nav-btn" data-page="events">📅 Events</button>
-                <button class="nav-btn" data-page="vendors">🏢 Vendors</button>
-                <button class="nav-btn" data-page="tasks">✅ Tasks</button>
-                <button class="nav-btn" data-page="budgets" id="nav-budgets">💰 Budgets</button>
-                <button class="nav-btn" data-page="run-sheets" id="nav-run-sheets">🏃 Run-Sheets</button>
-                <button class="nav-btn" data-page="training">📖 Training</button>
-            </nav>
-            <div class="sidebar-footer">
-                <span class="user-badge" id="user-badge">👤 Loading...</span>
-                <button onclick="handleLogout()" style="background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:13px;">🚪 Logout</button>
-            </div>
-        </aside>
-        <main class="main-content">
-            <section id="page-home" class="page active">
-                <header class="page-header">
-                    <h1>🏠 Dashboard Home</h1>
-                    <p>Welcome to Evento-Events Redefined – Command Center</p>
-                </header>
-                <div class="stats-grid">
-                    <div class="stat-card"><h3>📅 Events</h3><p class="stat-number" id="stat-events">0</p></div>
-                    <div class="stat-card"><h3>🏢 Vendors</h3><p class="stat-number" id="stat-vendors">0</p></div>
-                    <div class="stat-card"><h3>✅ Tasks</h3><p class="stat-number" id="stat-tasks">0</p></div>
-                    <div class="stat-card"><h3>💰 Budget (₹)</h3><p class="stat-number" id="stat-budget">0</p></div>
-                </div>
-                <div class="quick-actions">
-                    <h3>⚡ Quick Actions</h3>
-                    <button class="btn-primary" onclick="navigateTo('events')">+ New Event</button>
-                    <button class="btn-secondary" onclick="navigateTo('vendors')">+ New Vendor</button>
-                    <button class="btn-secondary" onclick="navigateTo('tasks')">+ New Task</button>
-                </div>
-            </section>
-            <section id="page-events" class="page">
-                <header class="page-header">
-                    <h1>📅 Events</h1>
-                    <button class="btn-primary" onclick="showAddEventForm()">+ Add Event</button>
-                </header>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr><th>Name</th><th>Client</th><th>Date</th><th>Venue</th><th>Status</th><th>Action</th></tr>
-                        </thead>
-                        <tbody id="events-table-body"></tbody>
-                    </table>
-                </div>
-            </section>
-            <section id="page-vendors" class="page">
-                <header class="page-header">
-                    <h1>🏢 Vendors</h1>
-                    <button class="btn-primary" onclick="showAddVendorForm()">+ Add Vendor</button>
-                </header>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr><th>Name</th><th>Category</th><th>Contact</th><th>Phone</th><th>Price</th><th>Action</th></tr>
-                        </thead>
-                        <tbody id="vendors-table-body"></tbody>
-                    </table>
-                </div>
-            </section>
-            <section id="page-tasks" class="page">
-                <header class="page-header">
-                    <h1>✅ Tasks</h1>
-                    <button class="btn-primary" onclick="showAddTaskForm()">+ Add Task</button>
-                </header>
-                <div class="kanban-board">
-                    <div class="kanban-column"><h3>📋 To-Do</h3><div id="tasks-todo" class="task-list"></div></div>
-                    <div class="kanban-column"><h3>🔄 In Progress</h3><div id="tasks-progress" class="task-list"></div></div>
-                    <div class="kanban-column"><h3>✅ Done</h3><div id="tasks-done" class="task-list"></div></div>
-                </div>
-            </section>
-            <section id="page-budgets" class="page">
-                <header class="page-header">
-                    <h1>💰 Budgets</h1>
-                    <button class="btn-primary" onclick="showAddBudgetForm()">+ Add Budget Item</button>
-                </header>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr><th>Event</th><th>Category</th><th>Est. Cost (₹)</th><th>Actual (₹)</th><th>Diff (₹)</th><th>Status</th></tr>
-                        </thead>
-                        <tbody id="budgets-table-body"></tbody>
-                    </table>
-                </div>
-            </section>
-            <section id="page-run-sheets" class="page">
-                <header class="page-header">
-                    <h1>🏃 Run-Sheets</h1>
-                    <button class="btn-primary" onclick="showAddRunSheetForm()">+ Add Run-Sheet</button>
-                </header>
-                <div id="run-sheets-container"></div>
-            </section>
-            <section id="page-training" class="page">
-                <header class="page-header">
-                    <h1>📖 Training Modules</h1>
-                    <a href="#" target="_blank" class="btn-secondary" style="display:inline-block;padding:8px 16px;border-radius:6px;text-decoration:none;background:#e9edf4;color:#0f172a;">📄 Download Full Manual (PDF)</a>
-                </header>
-                <div class="training-grid"></div>
-                <div style="margin-top:32px;background:#fff;padding:20px;border-radius:12px;border:1px solid #e9edf4;">
-                    <h3>📊 My Progress</h3>
-                    <div id="training-progress" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;"></div>
-                </div>
-            </section>
-        </main>
-        <div id="modal" class="modal hidden">
-            <div class="modal-content">
-                <span class="modal-close" onclick="closeModal()">&times;</span>
-                <div id="modal-body"></div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
 </body>
 </html>
