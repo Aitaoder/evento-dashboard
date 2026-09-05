@@ -340,7 +340,9 @@ table tr:hover td {
     margin-top: 12px;
     margin-bottom: 4px;
 }
-.modal-content input, .modal-content select, .modal-content textarea {
+.modal-content input,
+.modal-content select,
+.modal-content textarea {
     width: 100%;
     padding: 8px 12px;
     border: 1px solid #d1d7e0;
@@ -405,7 +407,9 @@ table tr:hover td {
         width: 60px;
         padding: 16px 8px;
     }
-    .sidebar .logo h2, .sidebar .logo .subtitle, .sidebar nav .nav-btn span {
+    .sidebar .logo h2,
+    .sidebar .logo .subtitle,
+    .sidebar nav .nav-btn span {
         display: none;
     }
     .sidebar nav .nav-btn {
@@ -413,8 +417,16 @@ table tr:hover td {
         font-size: 20px;
         padding: 10px;
     }
-    .sidebar-footer { display: none; }
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-    .kanban-board { grid-template-columns: 1fr; }
-    .training-grid { grid-template-columns: 1fr; }
+    .sidebar-footer {
+        display: none;
+    }
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .kanban-board {
+        grid-template-columns: 1fr;
+    }
+    .training-grid {
+        grid-template-columns: 1fr;
+    }
 }

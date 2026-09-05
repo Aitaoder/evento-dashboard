@@ -4,10 +4,14 @@
 // ============================================================
 
 // ===== SUPABASE CONFIGURATION =====
-const supabaseUrl = 'https://tkapyxsuagzwxvvslhyn.supabase.co'; 
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYXB5eHN1YWd6d3h2dnNsaHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDIyMzEsImV4cCI6MjEwMzMxODIzMX0.7UaRmzPGK9cStuJEkw4Fa1xoYLuCzGN6ONRFB_GNDJw'; 
+// REPLACE THESE WITH YOUR ACTUAL SUPABASE KEYS
+const supabaseUrl = 'https://YOUR_PROJECT_URL.supabase.co';
+const supabaseAnonKey = 'YOUR_ANON_PUBLIC_KEY';
 
+// ===== INITIALIZE SUPABASE =====
 const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+console.log('✅ Supabase initialized');
 
 // ===== DATA STORE =====
 let data = {
@@ -40,74 +44,73 @@ let data = {
 // ============================================================
 
 async function loadAllData() {
-    await Promise.all([
-        loadEvents(),
-        loadVendors(),
-        loadTasks(),
-        loadBudgets(),
-        loadRunSheets()
-    ]);
-    renderAll();
+    console.log('🔄 Loading data from Supabase...');
+    try {
+        await Promise.all([
+            loadEvents(),
+            loadVendors(),
+            loadTasks(),
+            loadBudgets(),
+            loadRunSheets()
+        ]);
+        renderAll();
+        console.log('✅ Data loaded successfully');
+    } catch (error) {
+        console.error('❌ Error loading data:', error);
+        alert('Failed to load data. Please refresh the page.');
+    }
 }
 
 async function loadEvents() {
     const { data: events, error } = await supabase.from('events').select('*');
-    if (!error) data.events = events || [];
+    if (error) { console.error('Error loading events:', error); return; }
+    data.events = events || [];
+    console.log('📅 Events loaded:', data.events.length);
 }
 
 async function loadVendors() {
     const { data: vendors, error } = await supabase.from('vendors').select('*');
-    if (!error) data.vendors = vendors || [];
+    if (error) { console.error('Error loading vendors:', error); return; }
+    data.vendors = vendors || [];
+    console.log('🏢 Vendors loaded:', data.vendors.length);
 }
 
 async function loadTasks() {
     const { data: tasks, error } = await supabase.from('tasks').select('*');
-    if (!error) data.tasks = tasks || [];
+    if (error) { console.error('Error loading tasks:', error); return; }
+    data.tasks = tasks || [];
+    console.log('✅ Tasks loaded:', data.tasks.length);
 }
 
 async function loadBudgets() {
     const { data: budgets, error } = await supabase.from('budgets').select('*');
-    if (!error) data.budgets = budgets || [];
+    if (error) { console.error('Error loading budgets:', error); return; }
+    data.budgets = budgets || [];
+    console.log('💰 Budgets loaded:', data.budgets.length);
 }
 
 async function loadRunSheets() {
     const { data: runSheets, error } = await supabase.from('run_sheets').select('*');
-    if (!error) data.runSheets = runSheets || [];
+    if (error) { console.error('Error loading run-sheets:', error); return; }
+    data.runSheets = runSheets || [];
+    console.log('🏃 Run-sheets loaded:', data.runSheets.length);
 }
 
 // ============================================================
-// SAVE FUNCTIONS
+// HELPER FUNCTIONS
 // ============================================================
 
 function genId() {
     return Date.now() + Math.floor(Math.random() * 1000);
 }
 
-async function saveEvent(eventData) {
-    const { data: newEvent, error } = await supabase
-        .from('events')
-        .insert([eventData])
-        .select();
-    if (!error && newEvent) data.events.push(newEvent[0]);
-    renderAll();
+function getEventName(id) {
+    const event = data.events.find(e => e.id === id);
+    return event ? event.name : 'Unknown';
 }
-
-async function updateEvent(id, updatedData) {
-    await supabase.from('events').update(updatedData).eq('id', id);
-    await loadEvents();
-    renderAll();
-}
-
-async function deleteEvent(id) {
-    await supabase.from('events').delete().eq('id', id);
-    await loadEvents();
-    renderAll();
-}
-
-// Same for vendors, tasks, budgets, runSheets...
 
 // ============================================================
-// RENDER FUNCTIONS (same as before)
+// RENDER FUNCTIONS
 // ============================================================
 
 function renderAll() {
@@ -132,7 +135,7 @@ function renderStats() {
 function renderEvents() {
     const tbody = document.getElementById('events-table-body');
     if (data.events.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">No events yet. Add one!</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">No events yet. Add one!</td></tr>';
         return;
     }
     tbody.innerHTML = data.events.map(e => `
@@ -153,7 +156,7 @@ function renderEvents() {
 function renderVendors() {
     const tbody = document.getElementById('vendors-table-body');
     if (data.vendors.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">No vendors yet. Add one!</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">No vendors yet. Add one!</td></tr>';
         return;
     }
     tbody.innerHTML = data.vendors.map(v => `
@@ -178,7 +181,7 @@ function renderTasks() {
 
     if (data.tasks.length === 0) {
         ['tasks-todo', 'tasks-progress', 'tasks-done'].forEach(id => {
-            document.getElementById(id).innerHTML = `<div style="color:#94a3b8;padding:12px;text-align:center;font-size:13px;">No tasks</div>`;
+            document.getElementById(id).innerHTML = '<div style="color:#94a3b8;padding:12px;text-align:center;font-size:13px;">No tasks</div>';
         });
         return;
     }
@@ -203,13 +206,13 @@ function renderTasks() {
 function renderBudgets() {
     const tbody = document.getElementById('budgets-table-body');
     if (data.budgets.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">No budget items yet.</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">No budget items yet.</td></tr>';
         return;
     }
     tbody.innerHTML = data.budgets.map(b => {
         const diff = b.actual - b.estimated;
         const diffColor = diff > 0 ? 'red' : (diff < 0 ? 'green' : '#64748b');
-        const eventName = data.events.find(e => e.id === b.event_id)?.name || 'Unknown';
+        const eventName = getEventName(b.event_id);
         return `
             <tr>
                 <td>${eventName}</td>
@@ -226,11 +229,11 @@ function renderBudgets() {
 function renderRunSheets() {
     const container = document.getElementById('run-sheets-container');
     if (data.runSheets.length === 0) {
-        container.innerHTML = `<div style="background:#fff;padding:20px;border-radius:12px;border:1px solid #e9edf4;color:#94a3b8;text-align:center;">No run-sheets yet. Add one!</div>`;
+        container.innerHTML = '<div style="background:#fff;padding:20px;border-radius:12px;border:1px solid #e9edf4;color:#94a3b8;text-align:center;">No run-sheets yet. Add one!</div>';
         return;
     }
     container.innerHTML = data.runSheets.map(rs => {
-        const eventName = data.events.find(e => e.id === rs.event_id)?.name || 'Unknown Event';
+        const eventName = getEventName(rs.event_id);
         return `
             <div style="background:#fff;padding:20px;border-radius:12px;border:1px solid #e9edf4;margin-bottom:16px;">
                 <h3 style="margin-bottom:4px;">${eventName}</h3>
@@ -244,7 +247,10 @@ function renderRunSheets() {
     }).join('');
 }
 
-// ===== TRAINING =====
+// ============================================================
+// TRAINING FUNCTIONS
+// ============================================================
+
 const MODULE_SUMMARIES = [
     { id: 1, summary: "Learn what event management is, the 5 phases of every event, and the key roles." },
     { id: 2, summary: "Deep dive into 6 vendor categories: Venue, Caterer, Photographer, Decorator, DJ, Makeup Artist." },
@@ -305,7 +311,7 @@ function toggleModule(id) {
 }
 
 // ============================================================
-// NAVIGATION & MODAL (same as before)
+// NAVIGATION & MODAL
 // ============================================================
 
 function navigateTo(page) {
@@ -327,7 +333,7 @@ function closeModal() {
 }
 
 // ============================================================
-// CRUD FUNCTIONS (Events)
+// CRUD FUNCTIONS (EVENTS)
 // ============================================================
 
 function showAddEventForm() {
@@ -356,25 +362,36 @@ async function addEvent() {
     const date = document.getElementById('f-event-date').value;
     const venue = document.getElementById('f-event-venue').value.trim();
     const status = document.getElementById('f-event-status').value;
-    if (!name || !client || !date || !venue) { alert('Please fill all fields'); return; }
-    
+    if (!name || !client || !date || !venue) {
+        alert('Please fill all fields');
+        return;
+    }
+
     const id = genId();
     const eventData = { id, name, client, date, venue, status };
-    
+
     const { error } = await supabase.from('events').insert([eventData]);
-    if (error) { alert('Failed to add event: ' + error.message); return; }
-    
+    if (error) {
+        alert('Failed to add event: ' + error.message);
+        return;
+    }
+
     data.events.push(eventData);
     renderAll();
     closeModal();
+    console.log('✅ Event added:', eventData);
 }
 
 async function deleteEvent(id) {
     if (!confirm('Delete this event?')) return;
     const { error } = await supabase.from('events').delete().eq('id', id);
-    if (error) { alert('Failed to delete: ' + error.message); return; }
+    if (error) {
+        alert('Failed to delete: ' + error.message);
+        return;
+    }
     data.events = data.events.filter(e => e.id !== id);
     renderAll();
+    console.log('✅ Event deleted:', id);
 }
 
 function editEvent(id) {
@@ -410,14 +427,18 @@ async function updateEvent(id) {
         status: document.getElementById('f-event-status').value
     };
     const { error } = await supabase.from('events').update(updatedData).eq('id', id);
-    if (error) { alert('Failed to update: ' + error.message); return; }
+    if (error) {
+        alert('Failed to update: ' + error.message);
+        return;
+    }
     Object.assign(e, updatedData);
     renderAll();
     closeModal();
+    console.log('✅ Event updated:', updatedData);
 }
 
 // ============================================================
-// CRUD FUNCTIONS (Vendors) – Simplified
+// CRUD FUNCTIONS (VENDORS)
 // ============================================================
 
 function showAddVendorForm() {
@@ -449,25 +470,36 @@ async function addVendor() {
     const contact = document.getElementById('f-vendor-contact').value.trim();
     const phone = document.getElementById('f-vendor-phone').value.trim();
     const price = document.getElementById('f-vendor-price').value.trim();
-    if (!name || !contact || !phone) { alert('Please fill all required fields'); return; }
-    
+    if (!name || !contact || !phone) {
+        alert('Please fill all required fields');
+        return;
+    }
+
     const id = genId();
     const vendorData = { id, name, category, contact, phone, price };
-    
+
     const { error } = await supabase.from('vendors').insert([vendorData]);
-    if (error) { alert('Failed to add vendor: ' + error.message); return; }
-    
+    if (error) {
+        alert('Failed to add vendor: ' + error.message);
+        return;
+    }
+
     data.vendors.push(vendorData);
     renderAll();
     closeModal();
+    console.log('✅ Vendor added:', vendorData);
 }
 
 async function deleteVendor(id) {
     if (!confirm('Delete this vendor?')) return;
     const { error } = await supabase.from('vendors').delete().eq('id', id);
-    if (error) { alert('Failed to delete: ' + error.message); return; }
+    if (error) {
+        alert('Failed to delete: ' + error.message);
+        return;
+    }
     data.vendors = data.vendors.filter(v => v.id !== id);
     renderAll();
+    console.log('✅ Vendor deleted:', id);
 }
 
 function editVendor(id) {
@@ -506,14 +538,18 @@ async function updateVendor(id) {
         price: document.getElementById('f-vendor-price').value.trim()
     };
     const { error } = await supabase.from('vendors').update(updatedData).eq('id', id);
-    if (error) { alert('Failed to update: ' + error.message); return; }
+    if (error) {
+        alert('Failed to update: ' + error.message);
+        return;
+    }
     Object.assign(v, updatedData);
     renderAll();
     closeModal();
+    console.log('✅ Vendor updated:', updatedData);
 }
 
 // ============================================================
-// CRUD FUNCTIONS (Tasks)
+// CRUD FUNCTIONS (TASKS)
 // ============================================================
 
 function showAddTaskForm() {
@@ -523,7 +559,11 @@ function showAddTaskForm() {
         <label>Task Title</label><input id="f-task-title" placeholder="Call Caterer" />
         <label>Description</label><textarea id="f-task-desc" placeholder="Confirm December 15 availability"></textarea>
         <label>Assigned To</label>
-        <select id="f-task-assign"><option value="Intern 1">Intern 1</option><option value="Intern 2">Intern 2</option><option value="Intern 3">Intern 3</option></select>
+        <select id="f-task-assign">
+            <option value="Intern 1">Intern 1</option>
+            <option value="Intern 2">Intern 2</option>
+            <option value="Intern 3">Intern 3</option>
+        </select>
         <label>Related Event</label>
         <select id="f-task-event"><option value="">None</option>${eventOptions}</select>
         <div class="form-actions">
@@ -538,37 +578,52 @@ async function addTask() {
     const description = document.getElementById('f-task-desc').value.trim();
     const assigned_to = document.getElementById('f-task-assign').value;
     const event_id = parseInt(document.getElementById('f-task-event').value) || null;
-    if (!title) { alert('Please enter a task title'); return; }
-    
+    if (!title) {
+        alert('Please enter a task title');
+        return;
+    }
+
     const id = genId();
     const taskData = { id, title, description, assigned_to, event_id, status: 'todo' };
-    
+
     const { error } = await supabase.from('tasks').insert([taskData]);
-    if (error) { alert('Failed to add task: ' + error.message); return; }
-    
+    if (error) {
+        alert('Failed to add task: ' + error.message);
+        return;
+    }
+
     data.tasks.push(taskData);
     renderAll();
     closeModal();
+    console.log('✅ Task added:', taskData);
 }
 
 async function deleteTask(id) {
     if (!confirm('Delete this task?')) return;
     const { error } = await supabase.from('tasks').delete().eq('id', id);
-    if (error) { alert('Failed to delete: ' + error.message); return; }
+    if (error) {
+        alert('Failed to delete: ' + error.message);
+        return;
+    }
     data.tasks = data.tasks.filter(t => t.id !== id);
     renderAll();
+    console.log('✅ Task deleted:', id);
 }
 
 async function moveTask(id, newStatus) {
     const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', id);
-    if (error) { alert('Failed to update task: ' + error.message); return; }
+    if (error) {
+        alert('Failed to update task: ' + error.message);
+        return;
+    }
     const task = data.tasks.find(t => t.id === id);
     if (task) task.status = newStatus;
     renderAll();
+    console.log('✅ Task moved:', id, '->', newStatus);
 }
 
 // ============================================================
-// CRUD FUNCTIONS (Budgets)
+// CRUD FUNCTIONS (BUDGETS)
 // ============================================================
 
 function showAddBudgetForm() {
@@ -603,21 +658,28 @@ async function addBudget() {
     const estimated = parseFloat(document.getElementById('f-budget-est').value);
     const actual = parseFloat(document.getElementById('f-budget-act').value) || 0;
     const status = document.getElementById('f-budget-status').value;
-    if (!event_id || isNaN(estimated) || estimated <= 0) { alert('Please fill all fields'); return; }
-    
+    if (!event_id || isNaN(estimated) || estimated <= 0) {
+        alert('Please fill all fields');
+        return;
+    }
+
     const id = genId();
     const budgetData = { id, event_id, category, estimated, actual, status };
-    
+
     const { error } = await supabase.from('budgets').insert([budgetData]);
-    if (error) { alert('Failed to add budget: ' + error.message); return; }
-    
+    if (error) {
+        alert('Failed to add budget: ' + error.message);
+        return;
+    }
+
     data.budgets.push(budgetData);
     renderAll();
     closeModal();
+    console.log('✅ Budget added:', budgetData);
 }
 
 // ============================================================
-// CRUD FUNCTIONS (Run-Sheets)
+// CRUD FUNCTIONS (RUN-SHEETS)
 // ============================================================
 
 function showAddRunSheetForm() {
@@ -638,25 +700,36 @@ function showAddRunSheetForm() {
 async function addRunSheet() {
     const event_id = parseInt(document.getElementById('f-rs-event').value);
     const timeline = document.getElementById('f-rs-timeline').value.trim();
-    if (!event_id || !timeline) { alert('Please fill all fields'); return; }
-    
+    if (!event_id || !timeline) {
+        alert('Please fill all fields');
+        return;
+    }
+
     const id = genId();
     const runSheetData = { id, event_id, timeline };
-    
+
     const { error } = await supabase.from('run_sheets').insert([runSheetData]);
-    if (error) { alert('Failed to add run-sheet: ' + error.message); return; }
-    
+    if (error) {
+        alert('Failed to add run-sheet: ' + error.message);
+        return;
+    }
+
     data.runSheets.push(runSheetData);
     renderAll();
     closeModal();
+    console.log('✅ Run-sheet added:', runSheetData);
 }
 
 async function deleteRunSheet(id) {
     if (!confirm('Delete this run-sheet?')) return;
     const { error } = await supabase.from('run_sheets').delete().eq('id', id);
-    if (error) { alert('Failed to delete: ' + error.message); return; }
+    if (error) {
+        alert('Failed to delete: ' + error.message);
+        return;
+    }
     data.runSheets = data.runSheets.filter(rs => rs.id !== id);
     renderAll();
+    console.log('✅ Run-sheet deleted:', id);
 }
 
 function editRunSheet(id) {
@@ -684,14 +757,18 @@ async function updateRunSheet(id) {
         timeline: document.getElementById('f-rs-timeline').value.trim()
     };
     const { error } = await supabase.from('run_sheets').update(updatedData).eq('id', id);
-    if (error) { alert('Failed to update: ' + error.message); return; }
+    if (error) {
+        alert('Failed to update: ' + error.message);
+        return;
+    }
     Object.assign(rs, updatedData);
     renderAll();
     closeModal();
+    console.log('✅ Run-sheet updated:', updatedData);
 }
 
 // ============================================================
-// SIDEBAR NAVIGATION EVENTS
+// NAVIGATION EVENTS
 // ============================================================
 
 document.querySelectorAll('.nav-btn').forEach(btn => {
