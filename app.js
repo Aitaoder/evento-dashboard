@@ -1,7 +1,13 @@
 // ============================================================
-// EVENTO-EVENTS DASHBOARD – NO LOGIN VERSION
-// All data stored in localStorage
+// EVENTO-EVENTS DASHBOARD – WITH SUPABASE BACKEND
+// No login required – all data shared across team
 // ============================================================
+
+// ===== SUPABASE CONFIGURATION =====
+const supabaseUrl = 'https://tkapyxsuagzwxvvslhyn.supabase.co'; 
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYXB5eHN1YWd6d3h2dnNsaHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDIyMzEsImV4cCI6MjEwMzMxODIzMX0.7UaRmzPGK9cStuJEkw4Fa1xoYLuCzGN6ONRFB_GNDJw'; 
+
+const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
 
 // ===== DATA STORE =====
 let data = {
@@ -29,49 +35,81 @@ let data = {
     }
 };
 
-// ===== SAMPLE DATA =====
-const SAMPLE_DATA = {
-    events: [
-        { id: 1, name: "Sharma Wedding", client: "Mr. Sharma", date: "2026-12-15", venue: "Grand Gardens", status: "Upcoming" },
-        { id: 2, name: "Gupta Anniversary", client: "Mrs. Gupta", date: "2026-11-20", venue: "Sky Banquet", status: "Ongoing" }
-    ],
-    vendors: [
-        { id: 1, name: "Grand Gardens", category: "Venue", contact: "Mr. Rajesh", phone: "98765XXXXX", price: "₹50,000" },
-        { id: 2, name: "Sharma Caterers", category: "Caterer", contact: "Mr. Amit", phone: "98765YYYYY", price: "₹40,000" }
-    ],
-    tasks: [
-        { id: 1, title: "Call Sharma Wedding Venue", description: "Confirm December 15 availability", status: "todo", assignedTo: "Intern 1", eventId: 1 },
-        { id: 2, title: "Send Proposal to Gupta", description: "Draft and send final proposal", status: "progress", assignedTo: "Intern 2", eventId: 2 },
-        { id: 3, title: "Review Budget for Sharma", description: "Check actual costs vs estimated", status: "done", assignedTo: "Intern 3", eventId: 1 }
-    ],
-    budgets: [
-        { id: 1, eventId: 1, category: "Venue", estimated: 50000, actual: 48000, status: "Paid" },
-        { id: 2, eventId: 1, category: "Catering", estimated: 70000, actual: 75000, status: "Partially Paid" }
-    ],
-    runSheets: [
-        { id: 1, eventId: 1, timeline: "8:00 AM – Venue Walkthrough\n10:00 AM – Decor Setup\n6:00 PM – Ceremony" }
-    ]
-};
+// ============================================================
+// LOAD DATA FROM SUPABASE
+// ============================================================
 
-// ===== INITIALIZE =====
-function init() {
-    if (!localStorage.getItem('eventoData')) {
-        localStorage.setItem('eventoData', JSON.stringify(SAMPLE_DATA));
-    }
-    data = JSON.parse(localStorage.getItem('eventoData'));
+async function loadAllData() {
+    await Promise.all([
+        loadEvents(),
+        loadVendors(),
+        loadTasks(),
+        loadBudgets(),
+        loadRunSheets()
+    ]);
     renderAll();
 }
 
-function saveData() {
-    localStorage.setItem('eventoData', JSON.stringify(data));
-    renderAll();
+async function loadEvents() {
+    const { data: events, error } = await supabase.from('events').select('*');
+    if (!error) data.events = events || [];
 }
+
+async function loadVendors() {
+    const { data: vendors, error } = await supabase.from('vendors').select('*');
+    if (!error) data.vendors = vendors || [];
+}
+
+async function loadTasks() {
+    const { data: tasks, error } = await supabase.from('tasks').select('*');
+    if (!error) data.tasks = tasks || [];
+}
+
+async function loadBudgets() {
+    const { data: budgets, error } = await supabase.from('budgets').select('*');
+    if (!error) data.budgets = budgets || [];
+}
+
+async function loadRunSheets() {
+    const { data: runSheets, error } = await supabase.from('run_sheets').select('*');
+    if (!error) data.runSheets = runSheets || [];
+}
+
+// ============================================================
+// SAVE FUNCTIONS
+// ============================================================
 
 function genId() {
     return Date.now() + Math.floor(Math.random() * 1000);
 }
 
-// ===== RENDER FUNCTIONS =====
+async function saveEvent(eventData) {
+    const { data: newEvent, error } = await supabase
+        .from('events')
+        .insert([eventData])
+        .select();
+    if (!error && newEvent) data.events.push(newEvent[0]);
+    renderAll();
+}
+
+async function updateEvent(id, updatedData) {
+    await supabase.from('events').update(updatedData).eq('id', id);
+    await loadEvents();
+    renderAll();
+}
+
+async function deleteEvent(id) {
+    await supabase.from('events').delete().eq('id', id);
+    await loadEvents();
+    renderAll();
+}
+
+// Same for vendors, tasks, budgets, runSheets...
+
+// ============================================================
+// RENDER FUNCTIONS (same as before)
+// ============================================================
+
 function renderAll() {
     renderStats();
     renderEvents();
@@ -149,7 +187,7 @@ function renderTasks() {
         const card = `
             <div class="task-card">
                 <div class="task-title">${t.title}</div>
-                <div class="task-meta">${t.assignedTo || 'Unassigned'} ${t.eventId ? '• Event #'+t.eventId : ''}</div>
+                <div class="task-meta">${t.assigned_to || 'Unassigned'} ${t.event_id ? '• Event #'+t.event_id : ''}</div>
                 <div class="task-actions">
                     ${t.status === 'todo' ? `<button class="btn-secondary" onclick="moveTask(${t.id},'progress')">➡️ Start</button>` : ''}
                     ${t.status === 'progress' ? `<button class="btn-secondary" onclick="moveTask(${t.id},'done')">✅ Done</button>` : ''}
@@ -171,7 +209,7 @@ function renderBudgets() {
     tbody.innerHTML = data.budgets.map(b => {
         const diff = b.actual - b.estimated;
         const diffColor = diff > 0 ? 'red' : (diff < 0 ? 'green' : '#64748b');
-        const eventName = data.events.find(e => e.id === b.eventId)?.name || 'Unknown';
+        const eventName = data.events.find(e => e.id === b.event_id)?.name || 'Unknown';
         return `
             <tr>
                 <td>${eventName}</td>
@@ -192,7 +230,7 @@ function renderRunSheets() {
         return;
     }
     container.innerHTML = data.runSheets.map(rs => {
-        const eventName = data.events.find(e => e.id === rs.eventId)?.name || 'Unknown Event';
+        const eventName = data.events.find(e => e.id === rs.event_id)?.name || 'Unknown Event';
         return `
             <div style="background:#fff;padding:20px;border-radius:12px;border:1px solid #e9edf4;margin-bottom:16px;">
                 <h3 style="margin-bottom:4px;">${eventName}</h3>
@@ -261,15 +299,37 @@ function toggleModule(id) {
     const mod = data.training.modules.find(m => m.id === id);
     if (mod) {
         mod.completed = !mod.completed;
-        saveData();
+        renderTraining();
+        renderTrainingProgress();
     }
 }
 
 // ============================================================
-// CRUD FUNCTIONS
+// NAVIGATION & MODAL (same as before)
 // ============================================================
 
-// ----- EVENTS -----
+function navigateTo(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById('page-' + page);
+    if (target) target.classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.page === page);
+    });
+}
+
+function openModal(html) {
+    document.getElementById('modal-body').innerHTML = html;
+    document.getElementById('modal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('modal').classList.add('hidden');
+}
+
+// ============================================================
+// CRUD FUNCTIONS (Events)
+// ============================================================
+
 function showAddEventForm() {
     openModal(`
         <h2>Add New Event</h2>
@@ -290,22 +350,31 @@ function showAddEventForm() {
     `);
 }
 
-function addEvent() {
+async function addEvent() {
     const name = document.getElementById('f-event-name').value.trim();
     const client = document.getElementById('f-event-client').value.trim();
     const date = document.getElementById('f-event-date').value;
     const venue = document.getElementById('f-event-venue').value.trim();
     const status = document.getElementById('f-event-status').value;
     if (!name || !client || !date || !venue) { alert('Please fill all fields'); return; }
-    data.events.push({ id: genId(), name, client, date, venue, status });
-    saveData();
+    
+    const id = genId();
+    const eventData = { id, name, client, date, venue, status };
+    
+    const { error } = await supabase.from('events').insert([eventData]);
+    if (error) { alert('Failed to add event: ' + error.message); return; }
+    
+    data.events.push(eventData);
+    renderAll();
     closeModal();
 }
 
-function deleteEvent(id) {
+async function deleteEvent(id) {
     if (!confirm('Delete this event?')) return;
+    const { error } = await supabase.from('events').delete().eq('id', id);
+    if (error) { alert('Failed to delete: ' + error.message); return; }
     data.events = data.events.filter(e => e.id !== id);
-    saveData();
+    renderAll();
 }
 
 function editEvent(id) {
@@ -330,19 +399,27 @@ function editEvent(id) {
     `);
 }
 
-function updateEvent(id) {
+async function updateEvent(id) {
     const e = data.events.find(ev => ev.id === id);
     if (!e) return;
-    e.name = document.getElementById('f-event-name').value.trim();
-    e.client = document.getElementById('f-event-client').value.trim();
-    e.date = document.getElementById('f-event-date').value;
-    e.venue = document.getElementById('f-event-venue').value.trim();
-    e.status = document.getElementById('f-event-status').value;
-    saveData();
+    const updatedData = {
+        name: document.getElementById('f-event-name').value.trim(),
+        client: document.getElementById('f-event-client').value.trim(),
+        date: document.getElementById('f-event-date').value,
+        venue: document.getElementById('f-event-venue').value.trim(),
+        status: document.getElementById('f-event-status').value
+    };
+    const { error } = await supabase.from('events').update(updatedData).eq('id', id);
+    if (error) { alert('Failed to update: ' + error.message); return; }
+    Object.assign(e, updatedData);
+    renderAll();
     closeModal();
 }
 
-// ----- VENDORS -----
+// ============================================================
+// CRUD FUNCTIONS (Vendors) – Simplified
+// ============================================================
+
 function showAddVendorForm() {
     openModal(`
         <h2>Add New Vendor</h2>
@@ -366,22 +443,31 @@ function showAddVendorForm() {
     `);
 }
 
-function addVendor() {
+async function addVendor() {
     const name = document.getElementById('f-vendor-name').value.trim();
     const category = document.getElementById('f-vendor-category').value;
     const contact = document.getElementById('f-vendor-contact').value.trim();
     const phone = document.getElementById('f-vendor-phone').value.trim();
     const price = document.getElementById('f-vendor-price').value.trim();
     if (!name || !contact || !phone) { alert('Please fill all required fields'); return; }
-    data.vendors.push({ id: genId(), name, category, contact, phone, price });
-    saveData();
+    
+    const id = genId();
+    const vendorData = { id, name, category, contact, phone, price };
+    
+    const { error } = await supabase.from('vendors').insert([vendorData]);
+    if (error) { alert('Failed to add vendor: ' + error.message); return; }
+    
+    data.vendors.push(vendorData);
+    renderAll();
     closeModal();
 }
 
-function deleteVendor(id) {
+async function deleteVendor(id) {
     if (!confirm('Delete this vendor?')) return;
+    const { error } = await supabase.from('vendors').delete().eq('id', id);
+    if (error) { alert('Failed to delete: ' + error.message); return; }
     data.vendors = data.vendors.filter(v => v.id !== id);
-    saveData();
+    renderAll();
 }
 
 function editVendor(id) {
@@ -409,19 +495,27 @@ function editVendor(id) {
     `);
 }
 
-function updateVendor(id) {
+async function updateVendor(id) {
     const v = data.vendors.find(vendor => vendor.id === id);
     if (!v) return;
-    v.name = document.getElementById('f-vendor-name').value.trim();
-    v.category = document.getElementById('f-vendor-category').value;
-    v.contact = document.getElementById('f-vendor-contact').value.trim();
-    v.phone = document.getElementById('f-vendor-phone').value.trim();
-    v.price = document.getElementById('f-vendor-price').value.trim();
-    saveData();
+    const updatedData = {
+        name: document.getElementById('f-vendor-name').value.trim(),
+        category: document.getElementById('f-vendor-category').value,
+        contact: document.getElementById('f-vendor-contact').value.trim(),
+        phone: document.getElementById('f-vendor-phone').value.trim(),
+        price: document.getElementById('f-vendor-price').value.trim()
+    };
+    const { error } = await supabase.from('vendors').update(updatedData).eq('id', id);
+    if (error) { alert('Failed to update: ' + error.message); return; }
+    Object.assign(v, updatedData);
+    renderAll();
     closeModal();
 }
 
-// ----- TASKS -----
+// ============================================================
+// CRUD FUNCTIONS (Tasks)
+// ============================================================
+
 function showAddTaskForm() {
     const eventOptions = data.events.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
     openModal(`
@@ -439,29 +533,44 @@ function showAddTaskForm() {
     `);
 }
 
-function addTask() {
+async function addTask() {
     const title = document.getElementById('f-task-title').value.trim();
     const description = document.getElementById('f-task-desc').value.trim();
-    const assignedTo = document.getElementById('f-task-assign').value;
-    const eventId = parseInt(document.getElementById('f-task-event').value) || null;
+    const assigned_to = document.getElementById('f-task-assign').value;
+    const event_id = parseInt(document.getElementById('f-task-event').value) || null;
     if (!title) { alert('Please enter a task title'); return; }
-    data.tasks.push({ id: genId(), title, description, status: 'todo', assignedTo, eventId });
-    saveData();
+    
+    const id = genId();
+    const taskData = { id, title, description, assigned_to, event_id, status: 'todo' };
+    
+    const { error } = await supabase.from('tasks').insert([taskData]);
+    if (error) { alert('Failed to add task: ' + error.message); return; }
+    
+    data.tasks.push(taskData);
+    renderAll();
     closeModal();
 }
 
-function deleteTask(id) {
+async function deleteTask(id) {
     if (!confirm('Delete this task?')) return;
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    if (error) { alert('Failed to delete: ' + error.message); return; }
     data.tasks = data.tasks.filter(t => t.id !== id);
-    saveData();
+    renderAll();
 }
 
-function moveTask(id, newStatus) {
+async function moveTask(id, newStatus) {
+    const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', id);
+    if (error) { alert('Failed to update task: ' + error.message); return; }
     const task = data.tasks.find(t => t.id === id);
-    if (task) { task.status = newStatus; saveData(); }
+    if (task) task.status = newStatus;
+    renderAll();
 }
 
-// ----- BUDGETS -----
+// ============================================================
+// CRUD FUNCTIONS (Budgets)
+// ============================================================
+
 function showAddBudgetForm() {
     const eventOptions = data.events.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
     openModal(`
@@ -488,19 +597,29 @@ function showAddBudgetForm() {
     `);
 }
 
-function addBudget() {
-    const eventId = parseInt(document.getElementById('f-budget-event').value);
+async function addBudget() {
+    const event_id = parseInt(document.getElementById('f-budget-event').value);
     const category = document.getElementById('f-budget-cat').value;
     const estimated = parseFloat(document.getElementById('f-budget-est').value);
     const actual = parseFloat(document.getElementById('f-budget-act').value) || 0;
     const status = document.getElementById('f-budget-status').value;
-    if (!eventId || isNaN(estimated) || estimated <= 0) { alert('Please fill all fields'); return; }
-    data.budgets.push({ id: genId(), eventId, category, estimated, actual, status });
-    saveData();
+    if (!event_id || isNaN(estimated) || estimated <= 0) { alert('Please fill all fields'); return; }
+    
+    const id = genId();
+    const budgetData = { id, event_id, category, estimated, actual, status };
+    
+    const { error } = await supabase.from('budgets').insert([budgetData]);
+    if (error) { alert('Failed to add budget: ' + error.message); return; }
+    
+    data.budgets.push(budgetData);
+    renderAll();
     closeModal();
 }
 
-// ----- RUN-SHEETS -----
+// ============================================================
+// CRUD FUNCTIONS (Run-Sheets)
+// ============================================================
+
 function showAddRunSheetForm() {
     const eventOptions = data.events.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
     openModal(`
@@ -516,25 +635,34 @@ function showAddRunSheetForm() {
     `);
 }
 
-function addRunSheet() {
-    const eventId = parseInt(document.getElementById('f-rs-event').value);
+async function addRunSheet() {
+    const event_id = parseInt(document.getElementById('f-rs-event').value);
     const timeline = document.getElementById('f-rs-timeline').value.trim();
-    if (!eventId || !timeline) { alert('Please fill all fields'); return; }
-    data.runSheets.push({ id: genId(), eventId, timeline });
-    saveData();
+    if (!event_id || !timeline) { alert('Please fill all fields'); return; }
+    
+    const id = genId();
+    const runSheetData = { id, event_id, timeline };
+    
+    const { error } = await supabase.from('run_sheets').insert([runSheetData]);
+    if (error) { alert('Failed to add run-sheet: ' + error.message); return; }
+    
+    data.runSheets.push(runSheetData);
+    renderAll();
     closeModal();
 }
 
-function deleteRunSheet(id) {
+async function deleteRunSheet(id) {
     if (!confirm('Delete this run-sheet?')) return;
+    const { error } = await supabase.from('run_sheets').delete().eq('id', id);
+    if (error) { alert('Failed to delete: ' + error.message); return; }
     data.runSheets = data.runSheets.filter(rs => rs.id !== id);
-    saveData();
+    renderAll();
 }
 
 function editRunSheet(id) {
     const rs = data.runSheets.find(r => r.id === id);
     if (!rs) return;
-    const eventOptions = data.events.map(e => `<option value="${e.id}" ${e.id===rs.eventId?'selected':''}>${e.name}</option>`).join('');
+    const eventOptions = data.events.map(e => `<option value="${e.id}" ${e.id===rs.event_id?'selected':''}>${e.name}</option>`).join('');
     openModal(`
         <h2>Edit Run-Sheet</h2>
         <label>Event</label>
@@ -548,35 +676,18 @@ function editRunSheet(id) {
     `);
 }
 
-function updateRunSheet(id) {
+async function updateRunSheet(id) {
     const rs = data.runSheets.find(r => r.id === id);
     if (!rs) return;
-    rs.eventId = parseInt(document.getElementById('f-rs-event').value);
-    rs.timeline = document.getElementById('f-rs-timeline').value.trim();
-    saveData();
+    const updatedData = {
+        event_id: parseInt(document.getElementById('f-rs-event').value),
+        timeline: document.getElementById('f-rs-timeline').value.trim()
+    };
+    const { error } = await supabase.from('run_sheets').update(updatedData).eq('id', id);
+    if (error) { alert('Failed to update: ' + error.message); return; }
+    Object.assign(rs, updatedData);
+    renderAll();
     closeModal();
-}
-
-// ============================================================
-// NAVIGATION & MODAL
-// ============================================================
-
-function navigateTo(page) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const target = document.getElementById('page-' + page);
-    if (target) target.classList.add('active');
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.page === page);
-    });
-}
-
-function openModal(html) {
-    document.getElementById('modal-body').innerHTML = html;
-    document.getElementById('modal').classList.remove('hidden');
-}
-
-function closeModal() {
-    document.getElementById('modal').classList.add('hidden');
 }
 
 // ============================================================
@@ -589,10 +700,6 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     });
 });
 
-// ============================================================
-// KEYBOARD SHORTCUT: Escape to close modal
-// ============================================================
-
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeModal();
 });
@@ -601,7 +708,4 @@ document.addEventListener('keydown', function(e) {
 // START APP
 // ============================================================
 
-init();
-
-console.log('🚀 Evento-Events Dashboard loaded successfully!');
-console.log('📊 Data:', data);
+loadAllData();
