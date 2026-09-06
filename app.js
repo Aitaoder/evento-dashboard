@@ -343,11 +343,10 @@ async function addEvent() {
         alert('Please fill all fields');
         return;
     }
-    const id = genId();
-    const eventData = { id, name, client, date, venue, status };
-    const { error } = await supabaseClient.from('events').insert([eventData]);
+    const eventData = { name, client, date, venue, status };
+    const { data: inserted, error } = await supabaseClient.from('events').insert([eventData]).select().single();
     if (error) { alert('Failed to add event: ' + error.message); return; }
-    data.events.push(eventData);
+    data.events.push(inserted);
     renderAll();
     closeModal();
 }
@@ -433,11 +432,10 @@ async function addVendor() {
         alert('Please fill all required fields');
         return;
     }
-    const id = genId();
-    const vendorData = { id, name, category, contact, phone, price };
-    const { error } = await supabaseClient.from('vendors').insert([vendorData]);
+    const vendorData = { name, category, contact, phone, price };
+    const { data: inserted, error } = await supabaseClient.from('vendors').insert([vendorData]).select().single();
     if (error) { alert('Failed to add vendor: ' + error.message); return; }
-    data.vendors.push(vendorData);
+    data.vendors.push(inserted);
     renderAll();
     closeModal();
 }
@@ -523,11 +521,10 @@ async function addTask() {
         alert('Please enter a task title');
         return;
     }
-    const id = genId();
-    const taskData = { id, title, description, assigned_to, event_id, status: 'todo' };
-    const { error } = await supabaseClient.from('tasks').insert([taskData]);
+    const taskData = { title, description, assigned_to, event_id, status: 'todo' };
+    const { data: inserted, error } = await supabaseClient.from('tasks').insert([taskData]).select().single();
     if (error) { alert('Failed to add task: ' + error.message); return; }
-    data.tasks.push(taskData);
+    data.tasks.push(inserted);
     renderAll();
     closeModal();
 }
@@ -585,11 +582,10 @@ async function addBudget() {
         alert('Please fill all fields');
         return;
     }
-    const id = genId();
-    const budgetData = { id, event_id, category, estimated, actual, status };
-    const { error } = await supabaseClient.from('budgets').insert([budgetData]);
+    const budgetData = { event_id, category, estimated, actual, status };
+    const { data: inserted, error } = await supabaseClient.from('budgets').insert([budgetData]).select().single();
     if (error) { alert('Failed to add budget: ' + error.message); return; }
-    data.budgets.push(budgetData);
+    data.budgets.push(inserted);
     renderAll();
     closeModal();
 }
@@ -617,11 +613,10 @@ async function addRunSheet() {
         alert('Please fill all fields');
         return;
     }
-    const id = genId();
-    const runSheetData = { id, event_id, timeline };
-    const { error } = await supabaseClient.from('run_sheets').insert([runSheetData]);
+    const runSheetData = { event_id, timeline };
+    const { data: inserted, error } = await supabaseClient.from('run_sheets').insert([runSheetData]).select().single();
     if (error) { alert('Failed to add run-sheet: ' + error.message); return; }
-    data.runSheets.push(runSheetData);
+    data.runSheets.push(inserted);
     renderAll();
     closeModal();
 }
