@@ -1,17 +1,19 @@
 // ============================================================
 // EVENTO-EVENTS DASHBOARD – WITH SUPABASE BACKEND
-// No login required – all data shared across team
 // ============================================================
 
 // ===== SUPABASE CONFIGURATION =====
-// REPLACE THESE WITH YOUR ACTUAL SUPABASE KEYS
 const supabaseUrl = 'https://tkapyxsuagzwxvvslhyn.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYXB5eHN1YWd6d3h2dnNsaHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDIyMzEsImV4cCI6MjEwMzMxODIzMX0.7UaRmzPGK9cStuJEkw4Fa1xoYLuCzGN6ONRFB_GNDJw';
 
 // ===== INITIALIZE SUPABASE =====
-const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseAnonKey) : null;
 
-console.log('✅ Supabase initialized');
+if (!supabase) {
+    console.error('❌ Supabase SDK not loaded. Make sure the Supabase script is included before app.js.');
+} else {
+    console.log('✅ Supabase initialized');
+}
 
 // ===== DATA STORE =====
 let data = {
@@ -39,12 +41,14 @@ let data = {
     }
 };
 
-// ============================================================
-// LOAD DATA FROM SUPABASE
-// ============================================================
-
+// ===== LOAD DATA FUNCTIONS =====
 async function loadAllData() {
-    console.log('🔄 Loading data from Supabase...');
+    if (!supabase) {
+        console.error('❌ Cannot load data because Supabase is not available.');
+        return;
+    }
+
+    console.log('🔄 Loading data...');
     try {
         await Promise.all([
             loadEvents(),
@@ -54,65 +58,45 @@ async function loadAllData() {
             loadRunSheets()
         ]);
         renderAll();
-        console.log('✅ Data loaded successfully');
+        console.log('✅ Data loaded');
     } catch (error) {
-        console.error('❌ Error loading data:', error);
-        alert('Failed to load data. Please refresh the page.');
+        console.error('❌ Error:', error);
     }
 }
 
 async function loadEvents() {
     const { data: events, error } = await supabase.from('events').select('*');
-    if (error) { console.error('Error loading events:', error); return; }
-    data.events = events || [];
-    console.log('📅 Events loaded:', data.events.length);
+    if (!error) data.events = events || [];
 }
 
 async function loadVendors() {
     const { data: vendors, error } = await supabase.from('vendors').select('*');
-    if (error) { console.error('Error loading vendors:', error); return; }
-    data.vendors = vendors || [];
-    console.log('🏢 Vendors loaded:', data.vendors.length);
+    if (!error) data.vendors = vendors || [];
 }
 
 async function loadTasks() {
     const { data: tasks, error } = await supabase.from('tasks').select('*');
-    if (error) { console.error('Error loading tasks:', error); return; }
-    data.tasks = tasks || [];
-    console.log('✅ Tasks loaded:', data.tasks.length);
+    if (!error) data.tasks = tasks || [];
 }
 
 async function loadBudgets() {
     const { data: budgets, error } = await supabase.from('budgets').select('*');
-    if (error) { console.error('Error loading budgets:', error); return; }
-    data.budgets = budgets || [];
-    console.log('💰 Budgets loaded:', data.budgets.length);
+    if (!error) data.budgets = budgets || [];
 }
 
 async function loadRunSheets() {
     const { data: runSheets, error } = await supabase.from('run_sheets').select('*');
-    if (error) { console.error('Error loading run-sheets:', error); return; }
-    data.runSheets = runSheets || [];
-    console.log('🏃 Run-sheets loaded:', data.runSheets.length);
+    if (!error) data.runSheets = runSheets || [];
 }
 
-// ============================================================
-// HELPER FUNCTIONS
-// ============================================================
-
-function genId() {
-    return Date.now() + Math.floor(Math.random() * 1000);
-}
-
+// ===== HELPER FUNCTIONS =====
+function genId() { return Date.now() + Math.floor(Math.random() * 1000); }
 function getEventName(id) {
     const event = data.events.find(e => e.id === id);
     return event ? event.name : 'Unknown';
 }
 
-// ============================================================
-// RENDER FUNCTIONS
-// ============================================================
-
+// ===== RENDER FUNCTIONS =====
 function renderAll() {
     renderStats();
     renderEvents();
@@ -247,10 +231,7 @@ function renderRunSheets() {
     }).join('');
 }
 
-// ============================================================
-// TRAINING FUNCTIONS
-// ============================================================
-
+// ===== TRAINING FUNCTIONS =====
 const MODULE_SUMMARIES = [
     { id: 1, summary: "Learn what event management is, the 5 phases of every event, and the key roles." },
     { id: 2, summary: "Deep dive into 6 vendor categories: Venue, Caterer, Photographer, Decorator, DJ, Makeup Artist." },
@@ -310,10 +291,7 @@ function toggleModule(id) {
     }
 }
 
-// ============================================================
-// NAVIGATION & MODAL
-// ============================================================
-
+// ===== NAVIGATION & MODAL =====
 function navigateTo(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById('page-' + page);
@@ -332,10 +310,7 @@ function closeModal() {
     document.getElementById('modal').classList.add('hidden');
 }
 
-// ============================================================
-// CRUD FUNCTIONS (EVENTS)
-// ============================================================
-
+// ===== CRUD FUNCTIONS (EVENTS) =====
 function showAddEventForm() {
     openModal(`
         <h2>Add New Event</h2>
@@ -366,32 +341,21 @@ async function addEvent() {
         alert('Please fill all fields');
         return;
     }
-
     const id = genId();
     const eventData = { id, name, client, date, venue, status };
-
     const { error } = await supabase.from('events').insert([eventData]);
-    if (error) {
-        alert('Failed to add event: ' + error.message);
-        return;
-    }
-
+    if (error) { alert('Failed to add event: ' + error.message); return; }
     data.events.push(eventData);
     renderAll();
     closeModal();
-    console.log('✅ Event added:', eventData);
 }
 
 async function deleteEvent(id) {
     if (!confirm('Delete this event?')) return;
     const { error } = await supabase.from('events').delete().eq('id', id);
-    if (error) {
-        alert('Failed to delete: ' + error.message);
-        return;
-    }
+    if (error) { alert('Failed to delete: ' + error.message); return; }
     data.events = data.events.filter(e => e.id !== id);
     renderAll();
-    console.log('✅ Event deleted:', id);
 }
 
 function editEvent(id) {
@@ -427,20 +391,13 @@ async function updateEvent(id) {
         status: document.getElementById('f-event-status').value
     };
     const { error } = await supabase.from('events').update(updatedData).eq('id', id);
-    if (error) {
-        alert('Failed to update: ' + error.message);
-        return;
-    }
+    if (error) { alert('Failed to update: ' + error.message); return; }
     Object.assign(e, updatedData);
     renderAll();
     closeModal();
-    console.log('✅ Event updated:', updatedData);
 }
 
-// ============================================================
-// CRUD FUNCTIONS (VENDORS)
-// ============================================================
-
+// ===== CRUD FUNCTIONS (VENDORS) =====
 function showAddVendorForm() {
     openModal(`
         <h2>Add New Vendor</h2>
@@ -474,32 +431,21 @@ async function addVendor() {
         alert('Please fill all required fields');
         return;
     }
-
     const id = genId();
     const vendorData = { id, name, category, contact, phone, price };
-
     const { error } = await supabase.from('vendors').insert([vendorData]);
-    if (error) {
-        alert('Failed to add vendor: ' + error.message);
-        return;
-    }
-
+    if (error) { alert('Failed to add vendor: ' + error.message); return; }
     data.vendors.push(vendorData);
     renderAll();
     closeModal();
-    console.log('✅ Vendor added:', vendorData);
 }
 
 async function deleteVendor(id) {
     if (!confirm('Delete this vendor?')) return;
     const { error } = await supabase.from('vendors').delete().eq('id', id);
-    if (error) {
-        alert('Failed to delete: ' + error.message);
-        return;
-    }
+    if (error) { alert('Failed to delete: ' + error.message); return; }
     data.vendors = data.vendors.filter(v => v.id !== id);
     renderAll();
-    console.log('✅ Vendor deleted:', id);
 }
 
 function editVendor(id) {
@@ -538,20 +484,13 @@ async function updateVendor(id) {
         price: document.getElementById('f-vendor-price').value.trim()
     };
     const { error } = await supabase.from('vendors').update(updatedData).eq('id', id);
-    if (error) {
-        alert('Failed to update: ' + error.message);
-        return;
-    }
+    if (error) { alert('Failed to update: ' + error.message); return; }
     Object.assign(v, updatedData);
     renderAll();
     closeModal();
-    console.log('✅ Vendor updated:', updatedData);
 }
 
-// ============================================================
-// CRUD FUNCTIONS (TASKS)
-// ============================================================
-
+// ===== CRUD FUNCTIONS (TASKS) =====
 function showAddTaskForm() {
     const eventOptions = data.events.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
     openModal(`
@@ -582,50 +521,32 @@ async function addTask() {
         alert('Please enter a task title');
         return;
     }
-
     const id = genId();
     const taskData = { id, title, description, assigned_to, event_id, status: 'todo' };
-
     const { error } = await supabase.from('tasks').insert([taskData]);
-    if (error) {
-        alert('Failed to add task: ' + error.message);
-        return;
-    }
-
+    if (error) { alert('Failed to add task: ' + error.message); return; }
     data.tasks.push(taskData);
     renderAll();
     closeModal();
-    console.log('✅ Task added:', taskData);
 }
 
 async function deleteTask(id) {
     if (!confirm('Delete this task?')) return;
     const { error } = await supabase.from('tasks').delete().eq('id', id);
-    if (error) {
-        alert('Failed to delete: ' + error.message);
-        return;
-    }
+    if (error) { alert('Failed to delete: ' + error.message); return; }
     data.tasks = data.tasks.filter(t => t.id !== id);
     renderAll();
-    console.log('✅ Task deleted:', id);
 }
 
 async function moveTask(id, newStatus) {
     const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', id);
-    if (error) {
-        alert('Failed to update task: ' + error.message);
-        return;
-    }
+    if (error) { alert('Failed to update task: ' + error.message); return; }
     const task = data.tasks.find(t => t.id === id);
     if (task) task.status = newStatus;
     renderAll();
-    console.log('✅ Task moved:', id, '->', newStatus);
 }
 
-// ============================================================
-// CRUD FUNCTIONS (BUDGETS)
-// ============================================================
-
+// ===== CRUD FUNCTIONS (BUDGETS) =====
 function showAddBudgetForm() {
     const eventOptions = data.events.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
     openModal(`
@@ -662,26 +583,16 @@ async function addBudget() {
         alert('Please fill all fields');
         return;
     }
-
     const id = genId();
     const budgetData = { id, event_id, category, estimated, actual, status };
-
     const { error } = await supabase.from('budgets').insert([budgetData]);
-    if (error) {
-        alert('Failed to add budget: ' + error.message);
-        return;
-    }
-
+    if (error) { alert('Failed to add budget: ' + error.message); return; }
     data.budgets.push(budgetData);
     renderAll();
     closeModal();
-    console.log('✅ Budget added:', budgetData);
 }
 
-// ============================================================
-// CRUD FUNCTIONS (RUN-SHEETS)
-// ============================================================
-
+// ===== CRUD FUNCTIONS (RUN-SHEETS) =====
 function showAddRunSheetForm() {
     const eventOptions = data.events.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
     openModal(`
@@ -704,32 +615,21 @@ async function addRunSheet() {
         alert('Please fill all fields');
         return;
     }
-
     const id = genId();
     const runSheetData = { id, event_id, timeline };
-
     const { error } = await supabase.from('run_sheets').insert([runSheetData]);
-    if (error) {
-        alert('Failed to add run-sheet: ' + error.message);
-        return;
-    }
-
+    if (error) { alert('Failed to add run-sheet: ' + error.message); return; }
     data.runSheets.push(runSheetData);
     renderAll();
     closeModal();
-    console.log('✅ Run-sheet added:', runSheetData);
 }
 
 async function deleteRunSheet(id) {
     if (!confirm('Delete this run-sheet?')) return;
     const { error } = await supabase.from('run_sheets').delete().eq('id', id);
-    if (error) {
-        alert('Failed to delete: ' + error.message);
-        return;
-    }
+    if (error) { alert('Failed to delete: ' + error.message); return; }
     data.runSheets = data.runSheets.filter(rs => rs.id !== id);
     renderAll();
-    console.log('✅ Run-sheet deleted:', id);
 }
 
 function editRunSheet(id) {
@@ -757,20 +657,13 @@ async function updateRunSheet(id) {
         timeline: document.getElementById('f-rs-timeline').value.trim()
     };
     const { error } = await supabase.from('run_sheets').update(updatedData).eq('id', id);
-    if (error) {
-        alert('Failed to update: ' + error.message);
-        return;
-    }
+    if (error) { alert('Failed to update: ' + error.message); return; }
     Object.assign(rs, updatedData);
     renderAll();
     closeModal();
-    console.log('✅ Run-sheet updated:', updatedData);
 }
 
-// ============================================================
-// NAVIGATION EVENTS
-// ============================================================
-
+// ===== NAVIGATION EVENTS =====
 document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         navigateTo(this.dataset.page);
@@ -781,8 +674,5 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeModal();
 });
 
-// ============================================================
-// START APP
-// ============================================================
-
+// ===== START APP =====
 loadAllData();
