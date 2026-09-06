@@ -7,9 +7,11 @@ const supabaseUrl = 'https://tkapyxsuagzwxvvslhyn.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYXB5eHN1YWd6d3h2dnNsaHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDIyMzEsImV4cCI6MjEwMzMxODIzMX0.7UaRmzPGK9cStuJEkw4Fa1xoYLuCzGN6ONRFB_GNDJw';
 
 // ===== INITIALIZE SUPABASE =====
-const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseAnonKey) : null;
+const supabaseClient = (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function')
+    ? window.supabase.createClient(supabaseUrl, supabaseAnonKey)
+    : (typeof window.supabase !== 'undefined' ? window.supabase : null);
 
-if (!supabase) {
+if (!supabaseClient) {
     console.error('❌ Supabase SDK not loaded. Make sure the Supabase script is included before app.js.');
 } else {
     console.log('✅ Supabase initialized');
@@ -43,7 +45,7 @@ let data = {
 
 // ===== LOAD DATA FUNCTIONS =====
 async function loadAllData() {
-    if (!supabase) {
+    if (!supabaseClient) {
         console.error('❌ Cannot load data because Supabase is not available.');
         return;
     }
@@ -65,27 +67,27 @@ async function loadAllData() {
 }
 
 async function loadEvents() {
-    const { data: events, error } = await supabase.from('events').select('*');
+    const { data: events, error } = await supabaseClient.from('events').select('*');
     if (!error) data.events = events || [];
 }
 
 async function loadVendors() {
-    const { data: vendors, error } = await supabase.from('vendors').select('*');
+    const { data: vendors, error } = await supabaseClient.from('vendors').select('*');
     if (!error) data.vendors = vendors || [];
 }
 
 async function loadTasks() {
-    const { data: tasks, error } = await supabase.from('tasks').select('*');
+    const { data: tasks, error } = await supabaseClient.from('tasks').select('*');
     if (!error) data.tasks = tasks || [];
 }
 
 async function loadBudgets() {
-    const { data: budgets, error } = await supabase.from('budgets').select('*');
+    const { data: budgets, error } = await supabaseClient.from('budgets').select('*');
     if (!error) data.budgets = budgets || [];
 }
 
 async function loadRunSheets() {
-    const { data: runSheets, error } = await supabase.from('run_sheets').select('*');
+    const { data: runSheets, error } = await supabaseClient.from('run_sheets').select('*');
     if (!error) data.runSheets = runSheets || [];
 }
 
@@ -343,7 +345,7 @@ async function addEvent() {
     }
     const id = genId();
     const eventData = { id, name, client, date, venue, status };
-    const { error } = await supabase.from('events').insert([eventData]);
+    const { error } = await supabaseClient.from('events').insert([eventData]);
     if (error) { alert('Failed to add event: ' + error.message); return; }
     data.events.push(eventData);
     renderAll();
@@ -352,7 +354,7 @@ async function addEvent() {
 
 async function deleteEvent(id) {
     if (!confirm('Delete this event?')) return;
-    const { error } = await supabase.from('events').delete().eq('id', id);
+    const { error } = await supabaseClient.from('events').delete().eq('id', id);
     if (error) { alert('Failed to delete: ' + error.message); return; }
     data.events = data.events.filter(e => e.id !== id);
     renderAll();
@@ -390,7 +392,7 @@ async function updateEvent(id) {
         venue: document.getElementById('f-event-venue').value.trim(),
         status: document.getElementById('f-event-status').value
     };
-    const { error } = await supabase.from('events').update(updatedData).eq('id', id);
+    const { error } = await supabaseClient.from('events').update(updatedData).eq('id', id);
     if (error) { alert('Failed to update: ' + error.message); return; }
     Object.assign(e, updatedData);
     renderAll();
@@ -433,7 +435,7 @@ async function addVendor() {
     }
     const id = genId();
     const vendorData = { id, name, category, contact, phone, price };
-    const { error } = await supabase.from('vendors').insert([vendorData]);
+    const { error } = await supabaseClient.from('vendors').insert([vendorData]);
     if (error) { alert('Failed to add vendor: ' + error.message); return; }
     data.vendors.push(vendorData);
     renderAll();
@@ -442,7 +444,7 @@ async function addVendor() {
 
 async function deleteVendor(id) {
     if (!confirm('Delete this vendor?')) return;
-    const { error } = await supabase.from('vendors').delete().eq('id', id);
+    const { error } = await supabaseClient.from('vendors').delete().eq('id', id);
     if (error) { alert('Failed to delete: ' + error.message); return; }
     data.vendors = data.vendors.filter(v => v.id !== id);
     renderAll();
@@ -483,7 +485,7 @@ async function updateVendor(id) {
         phone: document.getElementById('f-vendor-phone').value.trim(),
         price: document.getElementById('f-vendor-price').value.trim()
     };
-    const { error } = await supabase.from('vendors').update(updatedData).eq('id', id);
+    const { error } = await supabaseClient.from('vendors').update(updatedData).eq('id', id);
     if (error) { alert('Failed to update: ' + error.message); return; }
     Object.assign(v, updatedData);
     renderAll();
@@ -523,7 +525,7 @@ async function addTask() {
     }
     const id = genId();
     const taskData = { id, title, description, assigned_to, event_id, status: 'todo' };
-    const { error } = await supabase.from('tasks').insert([taskData]);
+    const { error } = await supabaseClient.from('tasks').insert([taskData]);
     if (error) { alert('Failed to add task: ' + error.message); return; }
     data.tasks.push(taskData);
     renderAll();
@@ -532,14 +534,14 @@ async function addTask() {
 
 async function deleteTask(id) {
     if (!confirm('Delete this task?')) return;
-    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    const { error } = await supabaseClient.from('tasks').delete().eq('id', id);
     if (error) { alert('Failed to delete: ' + error.message); return; }
     data.tasks = data.tasks.filter(t => t.id !== id);
     renderAll();
 }
 
 async function moveTask(id, newStatus) {
-    const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', id);
+    const { error } = await supabaseClient.from('tasks').update({ status: newStatus }).eq('id', id);
     if (error) { alert('Failed to update task: ' + error.message); return; }
     const task = data.tasks.find(t => t.id === id);
     if (task) task.status = newStatus;
@@ -585,7 +587,7 @@ async function addBudget() {
     }
     const id = genId();
     const budgetData = { id, event_id, category, estimated, actual, status };
-    const { error } = await supabase.from('budgets').insert([budgetData]);
+    const { error } = await supabaseClient.from('budgets').insert([budgetData]);
     if (error) { alert('Failed to add budget: ' + error.message); return; }
     data.budgets.push(budgetData);
     renderAll();
@@ -617,7 +619,7 @@ async function addRunSheet() {
     }
     const id = genId();
     const runSheetData = { id, event_id, timeline };
-    const { error } = await supabase.from('run_sheets').insert([runSheetData]);
+    const { error } = await supabaseClient.from('run_sheets').insert([runSheetData]);
     if (error) { alert('Failed to add run-sheet: ' + error.message); return; }
     data.runSheets.push(runSheetData);
     renderAll();
@@ -626,7 +628,7 @@ async function addRunSheet() {
 
 async function deleteRunSheet(id) {
     if (!confirm('Delete this run-sheet?')) return;
-    const { error } = await supabase.from('run_sheets').delete().eq('id', id);
+    const { error } = await supabaseClient.from('run_sheets').delete().eq('id', id);
     if (error) { alert('Failed to delete: ' + error.message); return; }
     data.runSheets = data.runSheets.filter(rs => rs.id !== id);
     renderAll();
@@ -656,7 +658,7 @@ async function updateRunSheet(id) {
         event_id: parseInt(document.getElementById('f-rs-event').value),
         timeline: document.getElementById('f-rs-timeline').value.trim()
     };
-    const { error } = await supabase.from('run_sheets').update(updatedData).eq('id', id);
+    const { error } = await supabaseClient.from('run_sheets').update(updatedData).eq('id', id);
     if (error) { alert('Failed to update: ' + error.message); return; }
     Object.assign(rs, updatedData);
     renderAll();
