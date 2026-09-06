@@ -17,6 +17,79 @@ if (!supabaseClient) {
     console.log('✅ Supabase initialized');
 }
 
+// ===== AUTH UI & HELPERS =====
+async function getCurrentUserId() {
+    if (!supabaseClient || !supabaseClient.auth) return null;
+    try {
+        const { data } = await supabaseClient.auth.getUser();
+        return data?.user?.id || null;
+    } catch (err) {
+        console.error('Auth getUser failed', err);
+        return null;
+    }
+}
+
+function createAuthUi() {
+    const footer = document.querySelector('.sidebar-footer');
+    if (!footer) return;
+    footer.innerHTML = `<div id="auth-area"></div>`;
+    updateAuthUi();
+    if (supabaseClient && supabaseClient.auth && typeof supabaseClient.auth.onAuthStateChange === 'function') {
+        supabaseClient.auth.onAuthStateChange(() => updateAuthUi());
+    }
+}
+
+async function updateAuthUi() {
+    const area = document.getElementById('auth-area');
+    if (!area) return;
+    const userId = await getCurrentUserId();
+    if (userId) {
+        area.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;">
+            <span style="font-size:13px;color:#e2e8f0;">Signed in</span>
+            <button class="btn-secondary" onclick="signOut()">Sign out</button>
+        </div>`;
+    } else {
+        area.innerHTML = `<button class="btn-primary" onclick="showLoginForm()">Sign In</button>`;
+    }
+}
+
+function showLoginForm() {
+    openModal(`
+        <h2>Sign In</h2>
+        <label>Email</label><input id="f-auth-email" type="email" placeholder="you@example.com" />
+        <label>Password</label><input id="f-auth-pass" type="password" placeholder="password" />
+        <div class="form-actions">
+            <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+            <button class="btn-primary" onclick="signIn()">Sign In</button>
+        </div>
+    `);
+}
+
+async function signIn() {
+    const email = document.getElementById('f-auth-email').value.trim();
+    const password = document.getElementById('f-auth-pass').value;
+    if (!email || !password) { alert('Enter email and password'); return; }
+    try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) { alert('Sign in failed: ' + error.message); console.error('SignIn error', error); return; }
+        closeModal();
+        updateAuthUi();
+    } catch (err) {
+        console.error('SignIn exception', err);
+        alert('Sign in failed — check console for details');
+    }
+}
+
+async function signOut() {
+    try {
+        await supabaseClient.auth.signOut();
+        updateAuthUi();
+    } catch (err) {
+        console.error('Sign out failed', err);
+        alert('Sign out failed');
+    }
+}
+
 // ===== DATA STORE =====
 let data = {
     events: [],
@@ -68,27 +141,32 @@ async function loadAllData() {
 
 async function loadEvents() {
     const { data: events, error } = await supabaseClient.from('events').select('*');
-    if (!error) data.events = events || [];
+    if (error) { console.error('Failed to load events', error); }
+    else data.events = events || [];
 }
 
 async function loadVendors() {
     const { data: vendors, error } = await supabaseClient.from('vendors').select('*');
-    if (!error) data.vendors = vendors || [];
+    if (error) { console.error('Failed to load vendors', error); }
+    else data.vendors = vendors || [];
 }
 
 async function loadTasks() {
     const { data: tasks, error } = await supabaseClient.from('tasks').select('*');
-    if (!error) data.tasks = tasks || [];
+    if (error) { console.error('Failed to load tasks', error); }
+    else data.tasks = tasks || [];
 }
 
 async function loadBudgets() {
     const { data: budgets, error } = await supabaseClient.from('budgets').select('*');
-    if (!error) data.budgets = budgets || [];
+    if (error) { console.error('Failed to load budgets', error); }
+    else data.budgets = budgets || [];
 }
 
 async function loadRunSheets() {
     const { data: runSheets, error } = await supabaseClient.from('run_sheets').select('*');
-    if (!error) data.runSheets = runSheets || [];
+    if (error) { console.error('Failed to load run_sheets', error); }
+    else data.runSheets = runSheets || [];
 }
 
 // ===== HELPER FUNCTIONS =====
