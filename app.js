@@ -71,16 +71,17 @@ async function signIn() {
     if (!email || !password) { alert('Enter email and password'); return; }
     try {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) { alert('Sign in failed: ' + error.message); console.error('SignIn error', error); return; }
+        if (error) { 
+            alert('Sign in failed: ' + error.message); // <--- This will tell you EXACTLY why it's stuck
+            return; 
+        }
         closeModal();
         updateAuthUi();
-        loadAllData(); // Reload data after signing in to bypass RLS
+        loadAllData(); // This refreshes the data so you see your events
     } catch (err) {
-        console.error('SignIn exception', err);
-        alert('Sign in failed — check console for details');
+        alert('Sign in exception: ' + err.message);
     }
 }
-
 async function signOut() {
     try {
         await supabaseClient.auth.signOut();
