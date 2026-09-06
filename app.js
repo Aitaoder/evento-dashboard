@@ -5,8 +5,8 @@
 
 // ===== SUPABASE CONFIGURATION =====
 // REPLACE THESE WITH YOUR ACTUAL SUPABASE KEYS
-const supabaseUrl = 'https://YOUR_PROJECT_URL.supabase.co';
-const supabaseAnonKey = 'YOUR_ANON_PUBLIC_KEY';
+const supabaseUrl = 'https://tkapyxsuagzwxvvslhyn.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYXB5eHN1YWd6d3h2dnNsaHluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NDIyMzEsImV4cCI6MjEwMzMxODIzMX0.7UaRmzPGK9cStuJEkw4Fa1xoYLuCzGN6ONRFB_GNDJw';
 
 // ===== INITIALIZE SUPABASE =====
 const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
